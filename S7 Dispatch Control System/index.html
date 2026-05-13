@@ -732,6 +732,18 @@ body.role-management .mgmt-nopage { display: none !important; }
       </div>
     </div>
   </div>
+  <!-- DAILY BACKUP BANNER — shown on first open of each new day -->
+  <div id="daily-backup-banner" style="display:none;align-items:center;gap:10px;background:#e9f7ef;border-bottom:2px solid #198754;padding:8px 20px;font-size:13px;flex-wrap:wrap;">
+    <i class="bi bi-cloud-check-fill" style="color:#198754;font-size:1.1rem;"></i>
+    <span style="color:#155724;font-weight:600;">Daily Backup Saved to Cloud</span>
+    <span id="backup-banner-date" style="font-family:'IBM Plex Mono',monospace;color:#155724;font-size:11px;background:#c3e6cb;padding:2px 8px;border-radius:10px;"></span>
+    <span id="backup-banner-counts" style="color:#555;font-size:12px;"></span>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+      <button onclick="downloadDailyBackup()" style="background:#198754;color:#fff;border:none;border-radius:6px;padding:4px 14px;font-size:12.5px;font-weight:600;cursor:pointer;"><i class="bi bi-download me-1"></i>Save .json</button>
+      <button onclick="document.getElementById('daily-backup-banner').style.display='none'" style="background:none;border:none;color:#888;font-size:1.1rem;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+  </div>
+
   <div class="page-content">
 
     <!-- ===== DASHBOARD ===== -->
@@ -1551,10 +1563,9 @@ body.role-management .mgmt-nopage { display: none !important; }
       <div class="row g-4">
         <div class="col-md-6">
           <div class="s7-card">
-            <div class="s7-card-title"><i class="bi bi-download text-warning"></i> Export Backup (PC1 &rarr; PC2)</div>
+            <div class="s7-card-title"><i class="bi bi-download text-warning"></i> Export Backup</div>
             <p style="font-size:13.5px;color:#555;margin-bottom:12px">Downloads all data as a single <code>.json</code> file.</p>
-            <div class="alert alert-info py-2 mb-3" style="font-size:12.5px"><i class="bi bi-lightbulb me-2"></i>Copy the <strong>entire S7 Dispatch Control System folder</strong> to the new PC first, then restore the backup on that PC.</div>
-            <button class="btn btn-s7 w-100 mb-2" onclick="exportBackup()"><i class="bi bi-download me-2"></i>Download Backup File</button>
+            <button class="btn btn-s7 w-100 mb-2" onclick="exportBackup()"><i class="bi bi-download me-2"></i>Download Backup Now</button>
             <div class="text-muted mt-2" style="font-size:11.5px" id="backup-stats"></div>
           </div>
         </div>
@@ -1576,6 +1587,20 @@ body.role-management .mgmt-nopage { display: none !important; }
             </div>
           </div>
         </div>
+
+        <!-- Cloud Backups Card -->
+        <div class="col-12">
+          <div class="s7-card">
+            <div class="s7-card-title"><i class="bi bi-cloud-fill text-warning"></i> Cloud Backups — Last 30 Days
+              <button class="btn btn-outline-secondary btn-sm ms-3" onclick="loadCloudBackupList()" style="font-size:11px;"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+            </div>
+            <p style="font-size:13px;color:#555;margin-bottom:12px">Automatic daily snapshots saved to Firebase. Click any date to restore that day's data.</p>
+            <div id="cloud-backup-list" style="min-height:60px;">
+              <div class="text-muted" style="font-size:13px;"><i class="bi bi-hourglass-split me-1"></i>Loading cloud backups…</div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -2346,7 +2371,7 @@ function showPage(pageId, el) {
   if (pageId === 'pendingorders') renderPendingOrders();
   if (pageId === 'receiving') { populateReceivingDropdown(); renderReceivingHistory(); populateFilterSalons('rpt-salon'); }
   if (pageId === 'reports') { populateFilterSalons('rpt-salon'); populateFYOptions(); generateReport(); }
-  if (pageId === 'backup') renderBackupStats();
+  if (pageId === 'backup') { renderBackupStats(); loadCloudBackupList(); }
   if (pageId === 'recyclebin') renderRecycleBin();
 }
 
@@ -6846,6 +6871,151 @@ function downloadReportExcel() {
 }
 
 // =====================================================================
+// =====================================================================
+// DAILY AUTO-BACKUP — Firebase snapshot + download banner
+// =====================================================================
+const BACKUP_DATE_KEY  = 's7_last_backup_date';
+const FB_BACKUPS_PATH  = 's7_dcs_backups';
+const BACKUP_KEEP_DAYS = 30;
+
+async function checkDailyBackup() {
+  const today     = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const lastDate  = localStorage.getItem(BACKUP_DATE_KEY);
+  if (lastDate === today) return; // already backed up today — skip
+  await runDailyBackup(today);
+}
+
+async function runDailyBackup(dateStr) {
+  // Deep-clone DB so any in-flight mutations don't affect the snapshot
+  const snapshot = JSON.parse(JSON.stringify(DB));
+  snapshot._backupDate    = dateStr;
+  snapshot._backupTime    = new Date().toISOString();
+  snapshot._backupVersion = '2.0';
+
+  // 1. Save to Firebase
+  if (_fbDB) {
+    try {
+      await _fbDB.ref(`${FB_BACKUPS_PATH}/${dateStr}`).set(snapshot);
+      _cleanupOldCloudBackups(); // fire-and-forget, remove >30-day-old entries
+    } catch(e) { console.warn('Cloud backup save failed:', e); }
+  }
+
+  // 2. Mark today as backed up
+  localStorage.setItem(BACKUP_DATE_KEY, dateStr);
+
+  // 3. Show the green banner
+  _showBackupBanner(dateStr, snapshot);
+}
+
+function _showBackupBanner(dateStr, snapshot) {
+  const banner = document.getElementById('daily-backup-banner');
+  const dateEl = document.getElementById('backup-banner-date');
+  const cntEl  = document.getElementById('backup-banner-counts');
+  if (!banner) return;
+  if (dateEl) dateEl.textContent = dateStr;
+  if (cntEl)  cntEl.textContent  = `${snapshot.salons?.length||0} salons · ${snapshot.products?.length||0} products · ${snapshot.dispatches?.length||0} dispatches`;
+  banner._snapshot = snapshot;
+  banner.style.display = 'flex';
+}
+
+function downloadDailyBackup() {
+  const banner = document.getElementById('daily-backup-banner');
+  const data   = (banner && banner._snapshot) ? banner._snapshot : DB;
+  const fname  = `Studieo7 DCS Backup_${(data._backupDate || new Date().toISOString().split('T')[0])}.json`;
+  const blob   = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a      = document.createElement('a');
+  a.href       = URL.createObjectURL(blob);
+  a.download   = fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  if (banner) banner.style.display = 'none';
+}
+
+async function _cleanupOldCloudBackups() {
+  if (!_fbDB) return;
+  try {
+    const snap    = await _fbDB.ref(FB_BACKUPS_PATH).once('value');
+    const entries = snap.val() || {};
+    const dates   = Object.keys(entries).sort();
+    if (dates.length > BACKUP_KEEP_DAYS) {
+      const toDelete = dates.slice(0, dates.length - BACKUP_KEEP_DAYS);
+      await Promise.all(toDelete.map(d => _fbDB.ref(`${FB_BACKUPS_PATH}/${d}`).remove()));
+    }
+  } catch(e) { console.warn('Backup cleanup failed:', e); }
+}
+
+async function loadCloudBackupList() {
+  const container = document.getElementById('cloud-backup-list');
+  if (!container) return;
+  if (!_fbDB) {
+    container.innerHTML = '<div class="text-muted" style="font-size:13px;"><i class="bi bi-cloud-slash me-1"></i>Cloud not connected — configure Firebase first.</div>';
+    return;
+  }
+  container.innerHTML = '<div class="text-muted" style="font-size:13px;"><i class="bi bi-hourglass-split me-1"></i>Loading…</div>';
+  try {
+    const snap    = await _fbDB.ref(FB_BACKUPS_PATH).once('value');
+    const entries = snap.val() || {};
+    const dates   = Object.keys(entries).sort().reverse(); // newest first
+    if (!dates.length) {
+      container.innerHTML = '<div class="text-muted" style="font-size:13px;">No cloud backups yet — one will be saved automatically on next app open.</div>';
+      return;
+    }
+    const rows = dates.map(d => {
+      const b = entries[d];
+      const time = b._backupTime ? new Date(b._backupTime).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '';
+      const counts = `${b.salons?.length||0} salons · ${b.products?.length||0} products · ${b.dispatches?.length||0} dispatches`;
+      const isToday = d === new Date().toISOString().split('T')[0];
+      return `<tr>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;white-space:nowrap;">${d} ${isToday ? '<span class="badge bg-success ms-1" style="font-size:9px;">TODAY</span>' : ''}</td>
+        <td style="font-size:12px;color:#555;">${time}</td>
+        <td style="font-size:12px;color:#555;">${counts}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-outline-secondary btn-sm me-1" style="font-size:11px;" onclick="downloadCloudBackup('${d}')"><i class="bi bi-download"></i> .json</button>
+          <button class="btn btn-outline-danger btn-sm admin-only" style="font-size:11px;" onclick="restoreCloudBackup('${d}')"><i class="bi bi-arrow-counterclockwise"></i> Restore</button>
+        </td>
+      </tr>`;
+    }).join('');
+    container.innerHTML = `<table class="table table-sm table-hover mb-0" style="font-size:13px;">
+      <thead><tr><th>Date</th><th>Time</th><th>Contents</th><th>Action</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  } catch(e) {
+    container.innerHTML = `<div class="text-danger" style="font-size:13px;"><i class="bi bi-exclamation-circle me-1"></i>Failed to load: ${e.message}</div>`;
+  }
+}
+
+async function downloadCloudBackup(dateStr) {
+  if (!_fbDB) return;
+  const snap = await _fbDB.ref(`${FB_BACKUPS_PATH}/${dateStr}`).once('value');
+  const data = snap.val();
+  if (!data) { alert('Backup not found.'); return; }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `Studieo7 DCS Backup_${dateStr}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+async function restoreCloudBackup(dateStr) {
+  if (!confirm(`⚠️ Restore data from ${dateStr}?\n\nThis will REPLACE all current data. Current state will be backed up first.\n\nContinue?`)) return;
+  if (!_fbDB) { alert('Cloud not connected.'); return; }
+  const snap = await _fbDB.ref(`${FB_BACKUPS_PATH}/${dateStr}`).once('value');
+  const data = snap.val();
+  if (!data || !data.salons) { alert('Invalid backup.'); return; }
+  // Save current state as a backup before overwriting
+  const todayStr = new Date().toISOString().split('T')[0];
+  await _fbDB.ref(`${FB_BACKUPS_PATH}/${todayStr}_before_restore`).set(JSON.parse(JSON.stringify(DB)));
+  DB = data;
+  _patchDBArrays();
+  saveDB();
+  alert(`✅ Data restored from ${dateStr}. Page will reload.`);
+  location.reload();
+}
+
+// =====================================================================
 // BACKUP & RESTORE
 // =====================================================================
 function renderBackupStats() {
@@ -7011,6 +7181,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const past30Str = past30.toISOString().split('T')[0];
   if (document.getElementById('rpt-from')) document.getElementById('rpt-from').value = past30Str;
   if (document.getElementById('rpt-to'))   document.getElementById('rpt-to').value   = today;
+
+  // Daily auto-backup — runs silently in background after UI is ready
+  setTimeout(() => checkDailyBackup(), 3000);
 });
 
 // =====================================================================
