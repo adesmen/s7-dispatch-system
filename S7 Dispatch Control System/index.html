@@ -2294,6 +2294,26 @@ function loadDB() {
     }
   });
   if (migrated) saveDB();
+
+  // Reconcile taxableValue from item amounts for any dispatch where they diverge.
+  // This fixes cases where the invoice parser stored a wrong summary total but
+  // individual item amounts are correct (causing Product-wise vs Weekly report mismatch).
+  let taxFixed = false;
+  DB.dispatches.forEach(d => {
+    if (!d.items || d.items.length === 0) return;
+    const itemSum = d.items.reduce((a, i) => a + (i.amount || 0), 0);
+    if (itemSum <= 0) return; // items have no amounts — leave stored value alone
+    if (Math.abs(itemSum - (d.taxableValue || 0)) > 1) {
+      d.taxableValue = Math.round(itemSum * 100) / 100;
+      // Recalculate invoiceValue only when it's also obviously wrong
+      // (invoice should be taxable + GST; if stored invoiceValue < taxableValue it's definitely wrong)
+      if ((d.invoiceValue || 0) < d.taxableValue) {
+        d.invoiceValue = Math.round((d.taxableValue + (d.totalTax || 0)) * 100) / 100;
+      }
+      taxFixed = true;
+    }
+  });
+  if (taxFixed) saveDB();
 }
 function saveDB() {
   localStorage.setItem(DB_KEY, JSON.stringify(DB));
@@ -6327,7 +6347,13 @@ function generateReport() {
   const pending     = dispatches.filter(d=>d.status==='pending').length;
   const accuracy    = total > 0 ? Math.round(((total-discrepancy)/total)*100) : 100;
   const totalBoxes  = dispatches.reduce((s,d)=>s+d.packageCount,0);
-  const taxable     = dispatches.reduce((s,d)=>s+(d.taxableValue||0),0);
+  // Compute taxable from item amounts (same source as product-wise report).
+  // Falls back to stored taxableValue only when items carry no amount data.
+  const _dispTaxable = d => {
+    const s = (d.items||[]).reduce((a,i)=>a+(i.amount||(i.invoiceQty||0)*(i.rate||0)),0);
+    return s > 0 ? s : (d.taxableValue||0);
+  };
+  const taxable     = dispatches.reduce((s,d)=>s+_dispTaxable(d),0);
   const tax         = dispatches.reduce((s,d)=>s+(d.totalTax||0),0);
   const invValue    = dispatches.reduce((s,d)=>s+(d.invoiceValue||0),0);
 
@@ -6387,17 +6413,17 @@ function generateReport() {
       <div class="s7-table">
         <table class="table table-borderless">
           <thead><tr><th>Dispatch ID</th><th>Salon</th><th>Invoice</th><th>Courier</th><th>Taxable</th><th>Tax</th><th>Inv Value</th><th>Status</th><th>Date</th></tr></thead>
-          <tbody>${dispatches.map(d=>`<tr>
+          <tbody>${dispatches.map(d=>{const _tv=_dispTaxable(d);return`<tr>
             <td><strong>${d.dispatchId}</strong></td>
             <td>${getSalon(d.salonId).name||'—'}</td>
             <td>${d.invoiceNo}</td>
             <td>${d.courierPartner||'—'}</td>
-            <td>${d.taxableValue>0?'&#8377;'+d.taxableValue.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</td>
+            <td>${_tv>0?'&#8377;'+_tv.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</td>
             <td>${d.totalTax>0?'&#8377;'+d.totalTax.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</td>
             <td>${d.invoiceValue>0?'&#8377;'+d.invoiceValue.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</td>
             <td>${statusBadge(d.status)}</td>
             <td>${fmtDate(d.dispatchDate)}</td>
-          </tr>`).join('')}</tbody>
+          </tr>`;}).join('')}</tbody>
         </table>
       </div>` : '<div class="text-muted text-center py-3">No dispatches in this period</div>'}
     </div>`;
