@@ -442,36 +442,54 @@ tr.row-mismatch { background: #fff5f5 !important; }
    ==================================================== */
 #login-overlay {
   position: fixed; inset: 0; z-index: 9999;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(213,143,62,.12) 0%, transparent 65%), #1d1d1b;
   display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
 }
 #login-overlay.hidden { display: none !important; }
 .login-box {
-  background: #fff; border-radius: 16px; padding: 2.5rem 2rem;
-  width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  width: 100%; max-width: 420px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(213,143,62,.25);
+}
+/* ── Logo section (top half of card) ── */
+.login-logo-section {
+  background: #fff;
+  padding: 2.2rem 2.2rem 1.4rem;
   text-align: center;
+  border-bottom: 3px solid #d58f3e;
 }
-.login-logo-wrap { margin-bottom: 1.2rem; }
-.login-logo-wrap svg { max-width: 200px; height: auto; }
-.login-title { font-size: 1rem; color: #555; margin-bottom: 1.8rem; font-weight: 500; letter-spacing: .5px; }
-.login-box .form-label { text-align: left; display: block; font-size: .8rem; font-weight: 600; color: #444; }
-.login-box .form-control { border-radius: 8px; border: 1.5px solid #ddd; font-size: .95rem; padding: .55rem .9rem; }
-.login-box .form-control:focus { border-color: var(--s7-primary); box-shadow: 0 0 0 3px rgba(90,130,200,.15); }
+.login-logo-section img {
+  max-width: 270px; width: 100%; height: auto; display: block; margin: 0 auto;
+}
+.login-dcs-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .68rem; letter-spacing: 3px; text-transform: uppercase;
+  color: #d58f3e; margin-top: .9rem; font-weight: 600;
+}
+/* ── Form section (bottom half) ── */
+.login-form-section { padding: 1.8rem 2.2rem 2rem; }
+.login-box .form-label { text-align: left; display: block; font-size: .75rem; font-weight: 700; color: #1d1d1b; letter-spacing: .5px; text-transform: uppercase; margin-bottom: .4rem; }
+.login-box .form-control { border-radius: 8px; border: 1.5px solid #e0e0e0; font-size: .95rem; padding: .6rem 1rem; }
+.login-box .form-control:focus { border-color: #d58f3e; box-shadow: 0 0 0 3px rgba(213,143,62,.18); outline: none; }
 .login-pwd-wrap { position: relative; }
-.login-pwd-wrap .form-control { padding-right: 2.6rem; }
+.login-pwd-wrap .form-control { padding-right: 2.8rem; }
 .login-pwd-toggle {
-  position: absolute; right: .7rem; top: 50%; transform: translateY(-50%);
-  background: none; border: none; color: #888; cursor: pointer; font-size: 1rem; padding: 0;
+  position: absolute; right: .8rem; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: #aaa; cursor: pointer; font-size: 1rem; padding: 0;
 }
-.login-pwd-toggle:hover { color: var(--s7-primary); }
+.login-pwd-toggle:hover { color: #d58f3e; }
 .login-btn {
-  width: 100%; padding: .65rem; font-size: 1rem; font-weight: 600;
-  background: var(--s7-primary); border: none; border-radius: 8px; color: #fff;
-  margin-top: 1.4rem; cursor: pointer; transition: background .2s;
+  width: 100%; padding: .72rem; font-size: .95rem; font-weight: 700; letter-spacing: .5px;
+  background: #d58f3e; border: none; border-radius: 10px; color: #fff;
+  margin-top: 1.4rem; cursor: pointer; transition: background .2s, box-shadow .2s;
+  text-transform: uppercase;
 }
-.login-btn:hover { background: #4a3fa8; }
-.login-error { color: #d9534f; font-size: .85rem; margin-top: .7rem; min-height: 1.2em; }
-.login-footer { margin-top: 1.5rem; font-size: .75rem; color: #aaa; }
+.login-btn:hover { background: #c07d30; box-shadow: 0 4px 16px rgba(213,143,62,.35); }
+.login-error { color: #d9534f; font-size: .85rem; margin-top: .7rem; min-height: 1.2em; text-align: center; }
+.login-footer { margin-top: 1.4rem; font-size: .72rem; color: #bbb; text-align: center; font-family: 'IBM Plex Mono', monospace; letter-spacing: .5px; }
 
 /* ====================================================
    FRESH-INSTALL OVERLAY  (shown when localStorage is empty on a new PC)
@@ -548,26 +566,33 @@ body.role-management .mgmt-nopage { display: none !important; }
      ==================================================== -->
 <div id="login-overlay">
   <div class="login-box">
-    <div class="login-logo-wrap">
-      <!-- Inline S7 wordmark as text for compactness -->
-      <div style="font-size:1.6rem;font-weight:800;letter-spacing:2px;color:#1d1d1b;">STUDIEO7</div>
-      <div style="font-size:.7rem;color:#888;letter-spacing:3px;text-transform:uppercase;margin-top:2px;">Salon Private Limited</div>
-    </div>
-    <div class="login-title">Dispatch Control System</div>
-    <div class="mb-3 text-start">
-      <label class="form-label">Username</label>
-      <input type="text" class="form-control" id="login-user" placeholder="Enter username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()" />
-    </div>
-    <div class="mb-1 text-start">
-      <label class="form-label">Password</label>
-      <div class="login-pwd-wrap">
-        <input type="password" class="form-control" id="login-pass" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
-        <button type="button" class="login-pwd-toggle" onclick="toggleLoginPwd()"><i class="bi bi-eye" id="login-eye-icon"></i></button>
+    <!-- Logo section -->
+    <div class="login-logo-section">
+      <img src="Private Limited logo.svg" alt="Studieo7 Salon Private Limited" onerror="this.style.display='none';document.getElementById('login-logo-fallback').style.display='block'">
+      <!-- Fallback if SVG doesn't load (e.g. local file:// access) -->
+      <div id="login-logo-fallback" style="display:none;">
+        <div style="font-size:1.8rem;font-weight:900;letter-spacing:3px;color:#1d1d1b;">STUDIEO7</div>
+        <div style="font-size:.65rem;color:#888;letter-spacing:4px;text-transform:uppercase;margin-top:3px;">Salon Private Limited</div>
       </div>
+      <div class="login-dcs-label">Dispatch Control System</div>
     </div>
-    <div class="login-error" id="login-error"></div>
-    <button class="login-btn" onclick="doLogin()"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</button>
-    <div class="login-footer">&copy; 2025 Studieo7 Salon Private Limited</div>
+    <!-- Form section -->
+    <div class="login-form-section">
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-control" id="login-user" placeholder="Enter username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+      <div class="mb-1">
+        <label class="form-label">Password</label>
+        <div class="login-pwd-wrap">
+          <input type="password" class="form-control" id="login-pass" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
+          <button type="button" class="login-pwd-toggle" onclick="toggleLoginPwd()"><i class="bi bi-eye" id="login-eye-icon"></i></button>
+        </div>
+      </div>
+      <div class="login-error" id="login-error"></div>
+      <button class="login-btn" onclick="doLogin()"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</button>
+      <div class="login-footer">&copy; 2026 Studieo7 Salon Private Limited</div>
+    </div>
   </div>
 </div>
 
