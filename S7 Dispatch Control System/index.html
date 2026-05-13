@@ -436,9 +436,108 @@ tr.row-mismatch { background: #fff5f5 !important; }
   img, svg, canvas { max-width: 100% !important; height: auto !important; }
   @page { size: A4; }
 }
+
+/* ====================================================
+   LOGIN OVERLAY
+   ==================================================== */
+#login-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+  display: flex; align-items: center; justify-content: center;
+}
+#login-overlay.hidden { display: none !important; }
+.login-box {
+  background: #fff; border-radius: 16px; padding: 2.5rem 2rem;
+  width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  text-align: center;
+}
+.login-logo-wrap { margin-bottom: 1.2rem; }
+.login-logo-wrap svg { max-width: 200px; height: auto; }
+.login-title { font-size: 1rem; color: #555; margin-bottom: 1.8rem; font-weight: 500; letter-spacing: .5px; }
+.login-box .form-label { text-align: left; display: block; font-size: .8rem; font-weight: 600; color: #444; }
+.login-box .form-control { border-radius: 8px; border: 1.5px solid #ddd; font-size: .95rem; padding: .55rem .9rem; }
+.login-box .form-control:focus { border-color: var(--s7-primary); box-shadow: 0 0 0 3px rgba(90,130,200,.15); }
+.login-pwd-wrap { position: relative; }
+.login-pwd-wrap .form-control { padding-right: 2.6rem; }
+.login-pwd-toggle {
+  position: absolute; right: .7rem; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: #888; cursor: pointer; font-size: 1rem; padding: 0;
+}
+.login-pwd-toggle:hover { color: var(--s7-primary); }
+.login-btn {
+  width: 100%; padding: .65rem; font-size: 1rem; font-weight: 600;
+  background: var(--s7-primary); border: none; border-radius: 8px; color: #fff;
+  margin-top: 1.4rem; cursor: pointer; transition: background .2s;
+}
+.login-btn:hover { background: #4a3fa8; }
+.login-error { color: #d9534f; font-size: .85rem; margin-top: .7rem; min-height: 1.2em; }
+.login-footer { margin-top: 1.5rem; font-size: .75rem; color: #aaa; }
+
+/* ====================================================
+   ROLE-BASED VISIBILITY
+   ==================================================== */
+/* edit-only: hidden for management (view-only role) */
+body.role-management .edit-only { display: none !important; }
+/* admin-only: hidden for everyone except superadmin */
+body.role-executive .admin-only { display: none !important; }
+body.role-management .admin-only { display: none !important; }
+/* superadmin-only: only superadmin sees this (user mgmt nav) */
+body.role-executive .superadmin-only { display: none !important; }
+body.role-management .superadmin-only { display: none !important; }
+/* mgmt-nopage: management cannot navigate to new dispatch page */
+body.role-management .mgmt-nopage { display: none !important; }
+/* Sidebar user info bar */
+.sidebar-user-bar {
+  padding: .6rem 1rem; border-top: 1px solid rgba(255,255,255,.1);
+  display: flex; align-items: center; gap: .6rem; margin-top: auto;
+}
+.sidebar-user-bar .user-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--s7-primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .85rem; font-weight: 700; flex-shrink: 0;
+}
+.sidebar-user-bar .user-info { flex: 1; min-width: 0; }
+.sidebar-user-bar .user-name { font-size: .8rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-user-bar .user-role { font-size: .7rem; color: rgba(255,255,255,.55); white-space: nowrap; }
+.sidebar-user-bar .logout-btn {
+  background: none; border: none; color: rgba(255,255,255,.6); cursor: pointer;
+  font-size: 1.1rem; padding: .2rem; flex-shrink: 0; transition: color .2s;
+}
+.sidebar-user-bar .logout-btn:hover { color: #ff6b6b; }
+/* Password management modal tweaks */
+#modal-usermgmt .role-badge { font-size: .7rem; padding: .2rem .5rem; border-radius: 20px; }
 </style>
 </head>
 <body>
+
+<!-- ====================================================
+     LOGIN OVERLAY
+     ==================================================== -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo-wrap">
+      <!-- Inline S7 wordmark as text for compactness -->
+      <div style="font-size:1.6rem;font-weight:800;letter-spacing:2px;color:#1d1d1b;">STUDIEO7</div>
+      <div style="font-size:.7rem;color:#888;letter-spacing:3px;text-transform:uppercase;margin-top:2px;">Salon Private Limited</div>
+    </div>
+    <div class="login-title">Dispatch Control System</div>
+    <div class="mb-3 text-start">
+      <label class="form-label">Username</label>
+      <input type="text" class="form-control" id="login-user" placeholder="Enter username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <div class="mb-1 text-start">
+      <label class="form-label">Password</label>
+      <div class="login-pwd-wrap">
+        <input type="password" class="form-control" id="login-pass" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
+        <button type="button" class="login-pwd-toggle" onclick="toggleLoginPwd()"><i class="bi bi-eye" id="login-eye-icon"></i></button>
+      </div>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button class="login-btn" onclick="doLogin()"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</button>
+    <div class="login-footer">&copy; 2025 Studieo7 Salon Private Limited</div>
+  </div>
+</div>
 
 <!-- SIDEBAR -->
 <div id="sidebar">
@@ -512,7 +611,7 @@ tr.row-mismatch { background: #fff5f5 !important; }
       <i class="bi bi-truck-front"></i> Couriers
     </div>
     <div class="nav-section-label">Dispatch</div>
-    <div class="nav-item-s7" onclick="showPage('newdispatch',this)">
+    <div class="nav-item-s7 mgmt-nopage" onclick="showPage('newdispatch',this)">
       <i class="bi bi-plus-circle"></i> New Dispatch
     </div>
     <div class="nav-item-s7" onclick="showPage('tracking',this)">
@@ -538,9 +637,20 @@ tr.row-mismatch { background: #fff5f5 !important; }
     <div class="nav-item-s7" onclick="showPage('backup',this)">
       <i class="bi bi-shield-check"></i> Backup &amp; Restore
     </div>
+    <div class="nav-item-s7 superadmin-only" onclick="showPage('usermgmt',this)">
+      <i class="bi bi-people-fill"></i> User Management
+    </div>
   </nav>
-  <div class="sidebar-footer">
+  <div class="sidebar-footer" style="font-size:.7rem;padding:.35rem 1rem;">
     v2.0 &bull; S7 DCS &nbsp;|&nbsp; <span id="db-size"></span>
+  </div>
+  <div class="sidebar-user-bar">
+    <div class="user-avatar" id="sidebar-avatar">SA</div>
+    <div class="user-info">
+      <div class="user-name" id="sidebar-username">Super Admin</div>
+      <div class="user-role" id="sidebar-role">Super Admin</div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()" title="Sign Out"><i class="bi bi-box-arrow-right"></i></button>
   </div>
 </div>
 
@@ -657,7 +767,7 @@ tr.row-mismatch { background: #fff5f5 !important; }
       <div class="s7-table">
         <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
           <div class="fw-bold" style="font-size:14px"><i class="bi bi-list-ul me-2 text-warning"></i>All Recent Dispatches</div>
-          <button class="btn btn-s7 btn-sm" onclick="showPage('newdispatch',document.querySelectorAll('.nav-item-s7')[4])">+ New Dispatch</button>
+          <button class="btn btn-s7 btn-sm edit-only" onclick="showPage('newdispatch',document.querySelectorAll('.nav-item-s7')[4])">+ New Dispatch</button>
         </div>
         <table class="table table-borderless" id="dashboard-table">
           <thead><tr>
@@ -686,7 +796,7 @@ tr.row-mismatch { background: #fff5f5 !important; }
             <option value="inactive">Inactive</option>
           </select>
         </div>
-        <button class="btn btn-s7" onclick="openCourierModal()"><i class="bi bi-plus-lg me-1"></i>Add Courier</button>
+        <button class="btn btn-s7 edit-only" onclick="openCourierModal()"><i class="bi bi-plus-lg me-1"></i>Add Courier</button>
       </div>
 
       <!-- Courier Directory Table -->
@@ -734,7 +844,7 @@ tr.row-mismatch { background: #fff5f5 !important; }
             <option value="Signature Lounge">Signature Lounge</option>
           </select>
         </div>
-        <button class="btn btn-s7" onclick="openSalonModal()"><i class="bi bi-plus-lg me-1"></i>Add Salon / Vendor</button>
+        <button class="btn btn-s7 edit-only" onclick="openSalonModal()"><i class="bi bi-plus-lg me-1"></i>Add Salon / Vendor</button>
       </div>
 
       <!-- KPI Summary Boxes -->
@@ -761,7 +871,7 @@ tr.row-mismatch { background: #fff5f5 !important; }
     <div id="page-products" class="page">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div></div>
-        <button class="btn btn-s7" onclick="openProductModal()"><i class="bi bi-plus-lg me-1"></i>Add Product</button>
+        <button class="btn btn-s7 edit-only" onclick="openProductModal()"><i class="bi bi-plus-lg me-1"></i>Add Product</button>
       </div>
       <div class="s7-table">
         <table class="table table-borderless">
@@ -1354,8 +1464,8 @@ tr.row-mismatch { background: #fff5f5 !important; }
           <div class="text-muted" style="font-size:12px">Dispatches deleted from Track &amp; Manage land here. Records linked to deleted dispatches are voided from the Receiving log, Missing Report and Damage Report automatically.</div>
         </div>
         <div class="d-flex gap-2">
-          <button class="btn btn-outline-success btn-sm" onclick="restoreSelected()" id="rb-restore-btn"><i class="bi bi-arrow-counterclockwise me-1"></i>Restore Selected</button>
-          <button class="btn btn-danger btn-sm" onclick="clearRecycleBin()" id="rb-clear-btn"><i class="bi bi-trash3-fill me-1"></i>Clear Recycle Bin</button>
+          <button class="btn btn-outline-success btn-sm admin-only" onclick="restoreSelected()" id="rb-restore-btn"><i class="bi bi-arrow-counterclockwise me-1"></i>Restore Selected</button>
+          <button class="btn btn-danger btn-sm admin-only" onclick="clearRecycleBin()" id="rb-clear-btn"><i class="bi bi-trash3-fill me-1"></i>Clear Recycle Bin</button>
         </div>
       </div>
       <div class="s7-table">
@@ -1388,7 +1498,7 @@ tr.row-mismatch { background: #fff5f5 !important; }
             <div class="text-muted mt-2" style="font-size:11.5px" id="backup-stats"></div>
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6 admin-only">
           <div class="s7-card">
             <div class="s7-card-title"><i class="bi bi-upload text-warning"></i> Restore Backup</div>
             <p style="font-size:13.5px;color:#555;margin-bottom:12px"><strong class="text-danger">This replaces everything currently in this browser.</strong></p>
@@ -1403,6 +1513,110 @@ tr.row-mismatch { background: #fff5f5 !important; }
               <div class="fw-semibold mt-2" style="color:#555">Drag &amp; drop backup .json here</div>
               <div class="text-muted" style="font-size:12px">or click to browse</div>
               <input type="file" id="restore-file" accept=".json" style="display:none" onchange="importBackup(this.files[0])">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USER MANAGEMENT PAGE (superadmin only) -->
+    <div id="page-usermgmt" class="page superadmin-only">
+      <div class="row g-4">
+        <div class="col-12">
+          <div class="s7-card">
+            <div class="s7-card-title"><i class="bi bi-people-fill text-warning me-2"></i>User Management</div>
+            <p style="font-size:13.5px;color:#555;margin-bottom:16px">Manage login credentials for Executive and Management roles. Super Admin password is managed separately.</p>
+            <div class="row g-3">
+              <!-- Executive Card -->
+              <div class="col-md-6">
+                <div class="border rounded p-3">
+                  <div class="d-flex align-items-center mb-3 gap-2">
+                    <div style="width:40px;height:40px;border-radius:50%;background:#5a82c8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;">GU</div>
+                    <div>
+                      <div class="fw-semibold" style="font-size:.95rem;">Executive</div>
+                      <div class="text-muted" style="font-size:.8rem;">Username: guna</div>
+                    </div>
+                    <span class="badge bg-primary ms-auto" style="font-size:.7rem;">Executive</span>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label" style="font-size:.8rem;font-weight:600;">New Password</label>
+                    <div class="input-group input-group-sm">
+                      <input type="password" class="form-control" id="um-exec-pwd" placeholder="Enter new password">
+                      <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-exec-pwd','um-exec-eye')"><i class="bi bi-eye" id="um-exec-eye"></i></button>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2 mt-2">
+                    <button class="btn btn-sm btn-s7 flex-grow-1" onclick="saveUMPassword('executive')"><i class="bi bi-check-circle me-1"></i>Save Password</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="resetUMPassword('executive')"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Default</button>
+                  </div>
+                  <div class="text-muted mt-2" style="font-size:.75rem;" id="um-exec-msg"></div>
+                </div>
+              </div>
+              <!-- Management Card -->
+              <div class="col-md-6">
+                <div class="border rounded p-3">
+                  <div class="d-flex align-items-center mb-3 gap-2">
+                    <div style="width:40px;height:40px;border-radius:50%;background:#6c757d;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;">MG</div>
+                    <div>
+                      <div class="fw-semibold" style="font-size:.95rem;">Management</div>
+                      <div class="text-muted" style="font-size:.8rem;">Username: s7mgt</div>
+                    </div>
+                    <span class="badge bg-secondary ms-auto" style="font-size:.7rem;">Management</span>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label" style="font-size:.8rem;font-weight:600;">New Password</label>
+                    <div class="input-group input-group-sm">
+                      <input type="password" class="form-control" id="um-mgt-pwd" placeholder="Enter new password">
+                      <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-mgt-pwd','um-mgt-eye')"><i class="bi bi-eye" id="um-mgt-eye"></i></button>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2 mt-2">
+                    <button class="btn btn-sm btn-s7 flex-grow-1" onclick="saveUMPassword('management')"><i class="bi bi-check-circle me-1"></i>Save Password</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="resetUMPassword('management')"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Default</button>
+                  </div>
+                  <div class="text-muted mt-2" style="font-size:.75rem;" id="um-mgt-msg"></div>
+                </div>
+              </div>
+              <!-- Super Admin own password -->
+              <div class="col-12">
+                <div class="border rounded p-3" style="border-color:#d58f3e !important;background:#fdf9f4;">
+                  <div class="d-flex align-items-center mb-3 gap-2">
+                    <div style="width:40px;height:40px;border-radius:50%;background:#d58f3e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;">SA</div>
+                    <div>
+                      <div class="fw-semibold" style="font-size:.95rem;">Super Admin</div>
+                      <div class="text-muted" style="font-size:.8rem;">Username: superadmin</div>
+                    </div>
+                    <span class="badge ms-auto" style="font-size:.7rem;background:#d58f3e;">Super Admin</span>
+                  </div>
+                  <div class="row g-2">
+                    <div class="col-md-4">
+                      <label class="form-label" style="font-size:.8rem;font-weight:600;">Current Password</label>
+                      <div class="input-group input-group-sm">
+                        <input type="password" class="form-control" id="um-sa-current" placeholder="Current password">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-sa-current','um-sa-eye0')"><i class="bi bi-eye" id="um-sa-eye0"></i></button>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label" style="font-size:.8rem;font-weight:600;">New Password</label>
+                      <div class="input-group input-group-sm">
+                        <input type="password" class="form-control" id="um-sa-new" placeholder="New password">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-sa-new','um-sa-eye1')"><i class="bi bi-eye" id="um-sa-eye1"></i></button>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label" style="font-size:.8rem;font-weight:600;">Confirm Password</label>
+                      <div class="input-group input-group-sm">
+                        <input type="password" class="form-control" id="um-sa-confirm" placeholder="Confirm new password">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-sa-confirm','um-sa-eye2')"><i class="bi bi-eye" id="um-sa-eye2"></i></button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <button class="btn btn-sm btn-s7" onclick="saveUMPassword('superadmin')"><i class="bi bi-key me-1"></i>Change Super Admin Password</button>
+                  </div>
+                  <div class="text-muted mt-2" style="font-size:.75rem;" id="um-sa-msg"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1965,6 +2179,10 @@ const pageSubtitles = {
 };
 
 function showPage(pageId, el) {
+  // Block management role from new dispatch page
+  if (pageId === 'newdispatch' && typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'management') {
+    return; // silently blocked (nav item is hidden by CSS anyway)
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item-s7').forEach(n => n.classList.remove('active'));
   const page = document.getElementById('page-' + pageId);
@@ -2106,7 +2324,7 @@ function renderDashboard() {
       trackReminderEl.innerHTML = noTrackingDisp.map(d => `
         <div class="reminder-item">
           <div><strong>${d.dispatchId}</strong> &rarr; ${getSalon(d.salonId).name||d.salonId}<br><span class="meta">Dispatched ${fmtDate(d.dispatchDate)} via ${d.courierPartner||'?'}</span></div>
-          <button class="btn btn-warning btn-sm" onclick="openTrackingModal('${d.id}')"><i class="bi bi-pencil me-1"></i>Add Tracking</button>
+          <button class="btn btn-warning btn-sm edit-only" onclick="openTrackingModal('${d.id}')"><i class="bi bi-pencil me-1"></i>Add Tracking</button>
         </div>`).join('');
     } else {
       trackReminderEl.innerHTML = '<div class="text-center py-3" style="color:#a08040;font-size:13px"><i class="bi bi-check-circle me-1"></i>All tracking numbers updated</div>';
@@ -2340,7 +2558,7 @@ function renderSalons() {
       <td style="font-size:12px;color:var(--muted)">${s.model||'—'}</td>
       <td style="font-size:12px">${s.city||'—'}${s.state ? ' · <span class="mono" style="font-size:10.5px">'+s.state+'</span>' : ''}</td>
       <td>${statusPill}</td>
-      <td><button class="btn btn-sm btn-s7-outline" onclick="openSalonModal('${s.id}')"><i class="bi bi-pencil me-1"></i>Edit</button></td>
+      <td><button class="btn btn-sm btn-s7-outline edit-only" onclick="openSalonModal('${s.id}')"><i class="bi bi-pencil me-1"></i>Edit</button></td>
     </tr>`;
   }).join('') || '<tr><td colspan="6" class="text-center text-muted py-3">No salons or vendors match the filter</td></tr>';
 }
@@ -2407,8 +2625,8 @@ function renderProducts() {
       <td><span class="badge bg-light text-dark border">${p.category}</span></td>
       <td>${p.unit}</td>
       <td>
-        <button class="btn btn-sm btn-s7-outline me-1" onclick="openProductModal('${p.id}')"><i class="bi bi-pencil"></i></button>
-        <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct('${p.id}')"><i class="bi bi-trash"></i></button>
+        <button class="btn btn-sm btn-s7-outline me-1 edit-only" onclick="openProductModal('${p.id}')"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-outline-danger edit-only" onclick="deleteProduct('${p.id}')"><i class="bi bi-trash"></i></button>
       </td>
     </tr>`).join('') || '<tr><td colspan="7" class="text-center text-muted py-3">No products added yet</td></tr>';
 }
@@ -3529,11 +3747,11 @@ function renderTracking() {
       <td>${fmtDate(d.dispatchDate)}</td>
       <td>
         <div class="d-flex gap-1 flex-wrap">
-          <button class="btn btn-sm btn-s7-outline" onclick="openTrackingModal('${d.id}')" title="Update Status"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-s7-outline edit-only" onclick="openTrackingModal('${d.id}')" title="Update Status"><i class="bi bi-pencil"></i></button>
           <button class="btn btn-sm btn-outline-secondary" onclick="showDispatchNote('${d.id}')" title="Dispatch Note"><i class="bi bi-file-text"></i></button>
           <button class="btn btn-sm btn-outline-dark" onclick="downloadBoxwise('${d.id}')" title="Box-wise PDF"><i class="bi bi-box-seam"></i></button>
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteDispatch('${d.id}')" title="Move to Recycle Bin"><i class="bi bi-trash"></i></button>
-          <button class="btn btn-sm btn-outline-warning" onclick="editBill('${d.id}')" title="Edit Bill"><i class="bi bi-pencil-square"></i> <span style="font-size:11px">Edit Bill</span></button>
+          <button class="btn btn-sm btn-outline-danger edit-only" onclick="deleteDispatch('${d.id}')" title="Move to Recycle Bin"><i class="bi bi-trash"></i></button>
+          <button class="btn btn-sm btn-outline-warning edit-only" onclick="editBill('${d.id}')" title="Edit Bill"><i class="bi bi-pencil-square"></i> <span style="font-size:11px">Edit Bill</span></button>
         </div>
       </td>
     </tr>`;
@@ -3664,7 +3882,7 @@ function renderCouriers() {
       <td>${c.status==='active'?`<span style="font-size:11px;padding:3px 10px;border-radius:999px;background:var(--green-tint);color:#1f5230;border:1px solid #b9d6b3;font-weight:600"><span class="status-dot dot-delivered"></span>active</span>`:`<span style="font-size:11px;padding:3px 10px;border-radius:999px;background:#ecebe4;color:#5a564a;border:1px solid #d4d0bf;font-weight:600">inactive</span>`}</td>
       <td>
         <div class="d-flex gap-1">
-          <button class="btn btn-sm btn-s7-outline" onclick="openCourierModal('${c.id}')" title="Edit"><i class="bi bi-pencil me-1"></i>Edit</button>
+          <button class="btn btn-sm btn-s7-outline edit-only" onclick="openCourierModal('${c.id}')" title="Edit"><i class="bi bi-pencil me-1"></i>Edit</button>
         </div>
       </td>
     </tr>`).join('') || '<tr><td colspan="7" class="text-center text-muted py-4">No couriers yet. Click "Add Courier" to begin.</td></tr>';
@@ -3932,7 +4150,7 @@ function renderInTransitPanel() {
           <div style="flex:0 0 auto">
             ${canTrack
               ? `<button class="btn-live-track" onclick="liveTrackDispatch('${d.id}')"><i class="bi bi-radar me-1"></i>Track</button>`
-              : `<button class="btn btn-sm btn-s7-outline" onclick="openTrackingModal('${d.id}')"><i class="bi bi-pencil me-1"></i>Add AWB</button>`}
+              : `<button class="btn btn-sm btn-s7-outline edit-only" onclick="openTrackingModal('${d.id}')"><i class="bi bi-pencil me-1"></i>Add AWB</button>`}
           </div>
         </div>`;
       }).join('')}
@@ -6534,6 +6752,7 @@ function importBackup(file) {
 // INIT
 // =====================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  initAuth();
   loadDB();
   // Hi-Fi v3 split date format: day on top (Thu, 09 May), week + year below (2026 · WK 19)
   const _today = new Date();
@@ -6564,8 +6783,254 @@ document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('rpt-from')) document.getElementById('rpt-from').value = past30Str;
   if (document.getElementById('rpt-to'))   document.getElementById('rpt-to').value   = today;
 });
+
+// =====================================================================
+// AUTH — Login / Logout / Role Management
+// =====================================================================
+
+const AUTH_KEY = 's7dcs_auth_session';
+const PWD_KEY  = 's7dcs_passwords';
+
+// Default credentials (stored in localStorage, superadmin can change them)
+const DEFAULT_PASSWORDS = {
+  superadmin: 'superadmin@3880',
+  executive:  'guna@2026',
+  management: 's7@2026'
+};
+
+// User account info (username → config)
+const USERS = {
+  superadmin: { displayName: 'Super Admin', role: 'superadmin', avatar: 'SA' },
+  guna:       { displayName: 'Guna',        role: 'executive',  avatar: 'GU' },
+  s7mgt:      { displayName: 'Management',  role: 'management', avatar: 'MG' }
+};
+
+// Username → role lookup (for password storage key)
+const USERNAME_ROLE_MAP = {
+  superadmin: 'superadmin',
+  guna:       'executive',
+  s7mgt:      'management'
+};
+
+let currentUser = null; // { username, displayName, role, avatar }
+
+// ── Password helpers ──────────────────────────────────────────────────
+function getPasswords() {
+  try { return JSON.parse(localStorage.getItem(PWD_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+
+function savePasswords(pwds) {
+  localStorage.setItem(PWD_KEY, JSON.stringify(pwds));
+}
+
+function getPasswordForRole(role) {
+  const stored = getPasswords();
+  return stored[role] || DEFAULT_PASSWORDS[role] || '';
+}
+
+// ── Auth init ─────────────────────────────────────────────────────────
+function initAuth() {
+  // Check if there is an existing session
+  try {
+    const session = JSON.parse(sessionStorage.getItem(AUTH_KEY));
+    if (session && session.username && USERS[session.username]) {
+      currentUser = { username: session.username, ...USERS[session.username] };
+      showApp();
+      return;
+    }
+  } catch(e) {}
+  showLoginOverlay();
+}
+
+function showLoginOverlay() {
+  const overlay = document.getElementById('login-overlay');
+  if (overlay) overlay.classList.remove('hidden');
+  // Focus username field
+  setTimeout(() => { const u = document.getElementById('login-user'); if(u) u.focus(); }, 100);
+}
+
+function showApp() {
+  // Hide login overlay
+  const overlay = document.getElementById('login-overlay');
+  if (overlay) overlay.classList.add('hidden');
+  // Apply role class to body
+  document.body.classList.remove('role-superadmin','role-executive','role-management');
+  document.body.classList.add('role-' + currentUser.role);
+  // Update sidebar user bar
+  const avatarEl = document.getElementById('sidebar-avatar');
+  const nameEl   = document.getElementById('sidebar-username');
+  const roleEl   = document.getElementById('sidebar-role');
+  if (avatarEl) avatarEl.textContent = currentUser.avatar;
+  if (nameEl)   nameEl.textContent   = currentUser.displayName;
+  if (roleEl) {
+    const roleLabels = { superadmin:'Super Admin', executive:'Executive', management:'Management' };
+    roleEl.textContent = roleLabels[currentUser.role] || currentUser.role;
+  }
+  // Save session
+  sessionStorage.setItem(AUTH_KEY, JSON.stringify({ username: currentUser.username }));
+}
+
+function doLogin() {
+  const username = (document.getElementById('login-user')?.value||'').trim().toLowerCase();
+  const password = document.getElementById('login-pass')?.value||'';
+  const errorEl  = document.getElementById('login-error');
+
+  if (!username || !password) {
+    if(errorEl) errorEl.textContent = 'Please enter both username and password.';
+    return;
+  }
+
+  // Lookup user
+  const userConf = USERS[username];
+  if (!userConf) {
+    if(errorEl) errorEl.textContent = 'Invalid username or password.';
+    return;
+  }
+
+  // Validate password
+  const correctPwd = getPasswordForRole(userConf.role);
+  if (password !== correctPwd) {
+    if(errorEl) errorEl.textContent = 'Invalid username or password.';
+    return;
+  }
+
+  // Success
+  if(errorEl) errorEl.textContent = '';
+  currentUser = { username, ...userConf };
+  showApp();
+}
+
+function doLogout() {
+  sessionStorage.removeItem(AUTH_KEY);
+  currentUser = null;
+  document.body.classList.remove('role-superadmin','role-executive','role-management');
+  // Reset login form
+  const u = document.getElementById('login-user');
+  const p = document.getElementById('login-pass');
+  if(u) u.value = '';
+  if(p) p.value = '';
+  const err = document.getElementById('login-error');
+  if(err) err.textContent = '';
+  showLoginOverlay();
+}
+
+function toggleLoginPwd() {
+  const input = document.getElementById('login-pass');
+  const icon  = document.getElementById('login-eye-icon');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if(icon) { icon.classList.remove('bi-eye'); icon.classList.add('bi-eye-slash'); }
+  } else {
+    input.type = 'password';
+    if(icon) { icon.classList.remove('bi-eye-slash'); icon.classList.add('bi-eye'); }
+  }
+}
+
+// ── Role helper functions ─────────────────────────────────────────────
+function isAdmin()      { return currentUser && currentUser.role === 'superadmin'; }
+function isExecutive()  { return currentUser && currentUser.role === 'executive'; }
+function isManagement() { return currentUser && currentUser.role === 'management'; }
+function canEdit()      { return currentUser && currentUser.role !== 'management'; }
+
+// ── User Management page functions ────────────────────────────────────
+function toggleUMPwd(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  const icon  = document.getElementById(iconId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if(icon) { icon.classList.remove('bi-eye'); icon.classList.add('bi-eye-slash'); }
+  } else {
+    input.type = 'password';
+    if(icon) { icon.classList.remove('bi-eye-slash'); icon.classList.add('bi-eye'); }
+  }
+}
+
+function saveUMPassword(target) {
+  const pwds = getPasswords();
+  let msgId, newPwd;
+
+  if (target === 'executive') {
+    newPwd = (document.getElementById('um-exec-pwd')?.value||'').trim();
+    msgId  = 'um-exec-msg';
+    if (!newPwd || newPwd.length < 4) {
+      document.getElementById(msgId).textContent = '⚠ Password must be at least 4 characters.';
+      return;
+    }
+    pwds.executive = newPwd;
+    savePasswords(pwds);
+    document.getElementById('um-exec-pwd').value = '';
+    document.getElementById(msgId).textContent = '✓ Executive password updated successfully.';
+
+  } else if (target === 'management') {
+    newPwd = (document.getElementById('um-mgt-pwd')?.value||'').trim();
+    msgId  = 'um-mgt-msg';
+    if (!newPwd || newPwd.length < 4) {
+      document.getElementById(msgId).textContent = '⚠ Password must be at least 4 characters.';
+      return;
+    }
+    pwds.management = newPwd;
+    savePasswords(pwds);
+    document.getElementById('um-mgt-pwd').value = '';
+    document.getElementById(msgId).textContent = '✓ Management password updated successfully.';
+
+  } else if (target === 'superadmin') {
+    const current = (document.getElementById('um-sa-current')?.value||'');
+    const newPass  = (document.getElementById('um-sa-new')?.value||'').trim();
+    const confirm  = (document.getElementById('um-sa-confirm')?.value||'').trim();
+    msgId = 'um-sa-msg';
+    const correctCurrent = getPasswordForRole('superadmin');
+    if (current !== correctCurrent) {
+      document.getElementById(msgId).textContent = '⚠ Current password is incorrect.';
+      return;
+    }
+    if (!newPass || newPass.length < 4) {
+      document.getElementById(msgId).textContent = '⚠ New password must be at least 4 characters.';
+      return;
+    }
+    if (newPass !== confirm) {
+      document.getElementById(msgId).textContent = '⚠ New password and confirm password do not match.';
+      return;
+    }
+    pwds.superadmin = newPass;
+    savePasswords(pwds);
+    document.getElementById('um-sa-current').value = '';
+    document.getElementById('um-sa-new').value = '';
+    document.getElementById('um-sa-confirm').value = '';
+    document.getElementById(msgId).textContent = '✓ Super Admin password updated. Please remember your new password!';
+    // Require re-login with new password on next session
+    sessionStorage.removeItem(AUTH_KEY);
+  }
+
+  setTimeout(() => {
+    const el = document.getElementById(msgId);
+    if (el && el.textContent.startsWith('✓')) el.textContent = '';
+  }, 4000);
+}
+
+function resetUMPassword(target) {
+  const pwds = getPasswords();
+  let msgId;
+  if (target === 'executive') {
+    delete pwds.executive;
+    savePasswords(pwds);
+    if(document.getElementById('um-exec-pwd')) document.getElementById('um-exec-pwd').value = '';
+    msgId = 'um-exec-msg';
+    document.getElementById(msgId).textContent = '✓ Executive password reset to default.';
+  } else if (target === 'management') {
+    delete pwds.management;
+    savePasswords(pwds);
+    if(document.getElementById('um-mgt-pwd')) document.getElementById('um-mgt-pwd').value = '';
+    msgId = 'um-mgt-msg';
+    document.getElementById(msgId).textContent = '✓ Management password reset to default.';
+  }
+  setTimeout(() => {
+    const el = document.getElementById(msgId);
+    if (el) el.textContent = '';
+  }, 4000);
+}
 </script>
 </body>
 </html>
-
-<!-- S7 DCS v20260513-0559 -->
