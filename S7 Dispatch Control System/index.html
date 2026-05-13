@@ -592,6 +592,9 @@ body.role-management .mgmt-nopage { display: none !important; }
       <div class="login-error" id="login-error"></div>
       <button class="login-btn" onclick="doLogin()"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</button>
       <div class="login-footer">&copy; 2026 Studieo7 Salon Private Limited</div>
+      <div style="margin-top:.5rem;font-size:.68rem;color:#ccc;font-family:'IBM Plex Mono',monospace;letter-spacing:.3px;">
+        Built &amp; managed by <strong style="color:#d58f3e;">Mr. Desmen</strong> &nbsp;&middot;&nbsp; <a href="tel:9600369998" style="color:#d58f3e;text-decoration:none;">9600369998</a>
+      </div>
     </div>
   </div>
 </div>
@@ -724,6 +727,10 @@ body.role-management .mgmt-nopage { display: none !important; }
   </nav>
   <div class="sidebar-footer" style="font-size:.7rem;padding:.35rem 1rem;">
     v2.0 &bull; S7 DCS &nbsp;|&nbsp; <span id="db-size"></span>
+  </div>
+  <div style="font-size:.62rem;padding:.3rem 1rem .4rem;color:rgba(255,255,255,.35);font-family:'IBM Plex Mono',monospace;border-top:1px solid rgba(255,255,255,.06);">
+    Built &amp; managed by <span style="color:#d58f3e;">Mr. Desmen</span><br>
+    <a href="tel:9600369998" style="color:rgba(213,143,62,.7);text-decoration:none;">9600369998</a>
   </div>
   <div class="sidebar-user-bar">
     <div class="user-avatar" id="sidebar-avatar">SA</div>
@@ -1921,6 +1928,12 @@ body.role-management .mgmt-nopage { display: none !important; }
             <option value="dispatched">Dispatched</option>
             <option value="in_transit">In Transit</option>
             <option value="delivered">Delivered</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Change Courier <small class="text-muted" style="font-size:10px;letter-spacing:0">(leave as-is to keep current courier)</small></label>
+          <select class="form-select" id="track-courier">
+            <option value="">— Keep current courier —</option>
           </select>
         </div>
         <div class="mb-3">
@@ -3882,17 +3895,14 @@ function renderTracking() {
   // Tracking KPI boxes — 5 tiles: Dispatched · In-Transit · Confirmed · Damaged · Missing
   const tKpiRow = document.getElementById('tracking-kpi-row');
   if (tKpiRow) {
-    // Use a strict active-dispatch ID set so receivings from deleted dispatches
-    // are NEVER counted even if isDispatchDeleted has edge-case misses.
+    // Strict: only IDs that truly exist in DB.dispatches (non-deleted, non-orphaned)
     const activeDispIds = new Set(DB.dispatches.map(d => d.id));
-    const activeDisp    = DB.dispatches; // all entries in DB.dispatches are non-deleted
-    const totalDisp     = activeDisp.length;
-    const inTransit     = activeDisp.filter(d => ['dispatched','in_transit'].includes(d.status)).length;
-    const confirmed     = activeDisp.filter(d => d.status === 'confirmed' || d.status === 'delivered').length;
-    // Count receivings only from currently active dispatches (strict ID-set check)
-    const activeRcv     = DB.receivings.filter(r => activeDispIds.has(r.dispatchId));
-    const damagedCount  = activeRcv.filter(r => r.items?.some(i => (i.damagedQty||0) > 0)).length;
-    const missingCount  = activeRcv.filter(r => r.items?.some(i => (i.missingQty||0) > 0)).length;
+    const totalDisp  = DB.dispatches.length;
+    const inTransit  = DB.dispatches.filter(d => ['dispatched','in_transit'].includes(d.status)).length;
+    const confirmed  = DB.dispatches.filter(d => d.status === 'confirmed' || d.status === 'delivered').length;
+    const activeRcv  = DB.receivings.filter(r => activeDispIds.has(r.dispatchId));
+    const damagedCount = activeRcv.filter(r => r.items?.some(i => (i.damagedQty||0) > 0)).length;
+    const missingCount = activeRcv.filter(r => r.items?.some(i => (i.missingQty||0) > 0)).length;
     tKpiRow.innerHTML = `
       <div class="col-6 col-md"><div class="kpi-card kpi-gold"><div class="kpi-icon"><i class="bi bi-boxes"></i></div><div class="kpi-val">${totalDisp}</div><div class="kpi-lbl">Total Dispatches</div></div></div>
       <div class="col-6 col-md"><div class="kpi-card kpi-blue"><div class="kpi-icon"><i class="bi bi-truck"></i></div><div class="kpi-val">${inTransit}</div><div class="kpi-lbl">In-Transit</div></div></div>
@@ -3976,6 +3986,13 @@ function openTrackingModal(id) {
   } else {
     statusSel.value = d.status === 'pending' ? 'dispatched' : d.status;
   }
+  // Populate courier change dropdown
+  const courierSel = document.getElementById('track-courier');
+  if (courierSel) {
+    const activeCouriers = DB.couriers.filter(c => c.status !== 'inactive');
+    courierSel.innerHTML = '<option value="">— Keep current courier —</option>' +
+      activeCouriers.map(c => `<option value="${c.name}" ${c.name===d.courierPartner?'selected':''}>${c.name}</option>`).join('');
+  }
   // Populate salon re-map dropdown
   const salonSel = document.getElementById('track-salon');
   if (salonSel) {
@@ -4003,11 +4020,12 @@ function onTrackingNumberInput() {
 }
 
 function saveTracking() {
-  const id      = document.getElementById('track-dispatch-id').value;
-  const tracking = document.getElementById('track-number').value.trim();
-  const status  = document.getElementById('track-status').value;
+  const id         = document.getElementById('track-dispatch-id').value;
+  const tracking   = document.getElementById('track-number').value.trim();
+  const status     = document.getElementById('track-status').value;
   const newSalonId = document.getElementById('track-salon')?.value || '';
-  const thisCourier = (DB.dispatches.find(d=>d.id===id)?.courierPartner)||'';
+  const newCourier = document.getElementById('track-courier')?.value || '';
+  const thisCourier = newCourier || (DB.dispatches.find(d=>d.id===id)?.courierPartner)||'';
   if (tracking && thisCourier) {
     const dup = DB.dispatches.find(d => d.id !== id && d.trackingNo && d.trackingNo === tracking && d.courierPartner === thisCourier);
     if (dup) { alert(`⚠️ Duplicate Tracking Number!\n"${tracking}" is already assigned to ${thisCourier} dispatch ${dup.dispatchId}.\nSame tracking number is allowed for different couriers.`); return; }
@@ -4025,10 +4043,11 @@ function saveTracking() {
     }
     // Never downgrade a confirmed dispatch via this modal
     if (currentStatus === 'confirmed') finalStatus = 'confirmed';
-    DB.dispatches[i].trackingNo     = tracking;
-    DB.dispatches[i].status         = finalStatus;
+    DB.dispatches[i].trackingNo      = tracking;
+    DB.dispatches[i].status          = finalStatus;
     DB.dispatches[i].trackingUpdated = !!tracking;
-    if (newSalonId) DB.dispatches[i].salonId = newSalonId;
+    if (newCourier)  DB.dispatches[i].courierPartner = newCourier;
+    if (newSalonId)  DB.dispatches[i].salonId = newSalonId;
   }
   saveDB();
   bootstrap.Modal.getOrCreateInstance(document.getElementById('trackingModal')).hide();
@@ -5979,10 +5998,14 @@ function renderReceivingKpi() {
   if (!kpiRow) return;
   const now = new Date();
   const thisMonth = (d) => { const dt = new Date(d); return dt.getMonth()===now.getMonth() && dt.getFullYear()===now.getFullYear(); };
-  const pendingOpen = DB.dispatches.filter(d => d.status==='delivered' && !isDispatchDeleted(d.id)).length;
-  const confirmedMonth = DB.receivings.filter(r => !isDispatchDeleted(r.dispatchId) && r.status==='complete' && thisMonth(r.receivedAt)).length;
-  const damagedMonth = DB.receivings.filter(r => !isDispatchDeleted(r.dispatchId) && thisMonth(r.receivedAt) && r.items?.some(i=>i.damagedQty>0)).length;
-  const missingMonth = DB.receivings.filter(r => !isDispatchDeleted(r.dispatchId) && thisMonth(r.receivedAt) && r.items?.some(i=>i.missingQty>0)).length;
+  // Strict active-dispatch ID set: only IDs that truly exist in DB.dispatches right now.
+  // This catches orphaned receiving records whose dispatch was deleted/voided without
+  // being cleanly added to deletedDispatches (the isDispatchDeleted check alone misses these).
+  const _liveDispIds = new Set(DB.dispatches.map(d => d.id));
+  const pendingOpen    = DB.dispatches.filter(d => d.status==='delivered').length;
+  const confirmedMonth = DB.receivings.filter(r => _liveDispIds.has(r.dispatchId) && r.status==='complete' && thisMonth(r.receivedAt)).length;
+  const damagedMonth   = DB.receivings.filter(r => _liveDispIds.has(r.dispatchId) && thisMonth(r.receivedAt) && r.items?.some(i=>(i.damagedQty||0)>0)).length;
+  const missingMonth   = DB.receivings.filter(r => _liveDispIds.has(r.dispatchId) && thisMonth(r.receivedAt) && r.items?.some(i=>(i.missingQty||0)>0)).length;
   kpiRow.innerHTML = `
     <div class="col-6 col-md-3"><div class="kpi-card kpi-amber"><div class="kpi-icon"><i class="bi bi-clock-history"></i></div><div class="kpi-val">${pendingOpen}</div><div class="kpi-lbl">Pending · Open</div></div></div>
     <div class="col-6 col-md-3"><div class="kpi-card kpi-green"><div class="kpi-icon"><i class="bi bi-check-circle"></i></div><div class="kpi-val">${confirmedMonth}</div><div class="kpi-lbl">Confirmed · This Month</div></div></div>
