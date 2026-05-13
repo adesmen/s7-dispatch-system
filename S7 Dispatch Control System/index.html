@@ -474,6 +474,35 @@ tr.row-mismatch { background: #fff5f5 !important; }
 .login-footer { margin-top: 1.5rem; font-size: .75rem; color: #aaa; }
 
 /* ====================================================
+   FRESH-INSTALL OVERLAY  (shown when localStorage is empty on a new PC)
+   ==================================================== */
+#fresh-install-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+  display: flex; align-items: center; justify-content: center;
+}
+#fresh-install-overlay.hidden { display: none !important; }
+.fi-box {
+  background: #fff; border-radius: 16px; padding: 2.5rem 2rem;
+  width: 100%; max-width: 460px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  text-align: center;
+}
+.fi-icon { font-size: 3rem; color: var(--s7-primary); margin-bottom: .6rem; }
+.fi-title { font-size: 1.2rem; font-weight: 800; color: #1d1d1b; margin-bottom: .3rem; }
+.fi-sub { font-size: .85rem; color: #666; margin-bottom: 1.5rem; line-height: 1.5; }
+#fi-dropzone {
+  border: 2.5px dashed var(--s7-primary); border-radius: 12px;
+  padding: 2rem 1rem; cursor: pointer; transition: background .2s;
+  background: #fafafa;
+}
+#fi-dropzone:hover, #fi-dropzone.dz-over { background: #fef3e2; border-color: #c07d30; }
+#fi-dropzone .fi-dz-icon { font-size: 2rem; color: var(--s7-primary); }
+#fi-dropzone .fi-dz-label { font-weight: 600; color: #444; margin-top: .4rem; font-size: .95rem; }
+#fi-dropzone .fi-dz-hint { font-size: .78rem; color: #999; margin-top: .3rem; }
+.fi-status { margin-top: 1rem; font-size: .85rem; min-height: 1.3em; color: #c07d30; font-weight: 600; }
+.fi-footer { margin-top: 1.5rem; font-size: .75rem; color: #aaa; }
+
+/* ====================================================
    ROLE-BASED VISIBILITY
    ==================================================== */
 /* edit-only: hidden for management (view-only role) */
@@ -508,6 +537,9 @@ body.role-management .mgmt-nopage { display: none !important; }
 /* Password management modal tweaks */
 #modal-usermgmt .role-badge { font-size: .7rem; padding: .2rem .5rem; border-radius: 20px; }
 </style>
+<!-- Firebase SDK (Realtime Database — compat build for easy global use) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -536,6 +568,30 @@ body.role-management .mgmt-nopage { display: none !important; }
     <div class="login-error" id="login-error"></div>
     <button class="login-btn" onclick="doLogin()"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</button>
     <div class="login-footer">&copy; 2025 Studieo7 Salon Private Limited</div>
+  </div>
+</div>
+
+<!-- FRESH-INSTALL OVERLAY — shown on a new PC where localStorage is empty -->
+<div id="fresh-install-overlay" class="hidden">
+  <div class="fi-box">
+    <div class="fi-icon"><i class="bi bi-database-slash"></i></div>
+    <div class="fi-title">No Data Found on This System</div>
+    <div class="fi-sub">
+      This is a fresh browser / new PC. Your DCS data lives in this browser's storage.<br>
+      Restore your backup <code>.json</code> file to continue.
+    </div>
+    <div id="fi-dropzone"
+         ondragover="event.preventDefault();this.classList.add('dz-over')"
+         ondragleave="this.classList.remove('dz-over')"
+         ondrop="event.preventDefault();this.classList.remove('dz-over');fiHandleDrop(event)"
+         onclick="document.getElementById('fi-file').click()">
+      <div class="fi-dz-icon"><i class="bi bi-cloud-upload"></i></div>
+      <div class="fi-dz-label">Click or drag &amp; drop backup .json here</div>
+      <div class="fi-dz-hint">File name example: <em>Studieo7 DCS Backup_2026-05-13_1153.json</em></div>
+      <input type="file" id="fi-file" accept=".json" style="display:none" onchange="fiImport(this.files[0])">
+    </div>
+    <div class="fi-status" id="fi-status"></div>
+    <div class="fi-footer">&copy; 2025 Studieo7 Salon Private Limited &mdash; Dispatch Control System</div>
   </div>
 </div>
 
@@ -662,6 +718,10 @@ body.role-management .mgmt-nopage { display: none !important; }
       <div class="topbar-sub" id="topbar-sub">OVERVIEW &middot; LIVE</div>
     </div>
     <div class="topbar-right">
+      <span id="cloud-sync-indicator" title="Cloud Sync" style="font-size:13px;display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;background:#f5f5f5;color:#888;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;cursor:default;transition:all .3s;">
+        <i class="bi bi-cloud" id="cloud-sync-icon"></i>
+        <span id="cloud-sync-label" style="font-size:11px;">—</span>
+      </span>
       <span id="reminder-bell" class="topbar-bell" onclick="showPage('tracking',document.querySelector('.nav-item-s7'))">
         <i class="bi bi-bell"></i>
         <span id="bell-badge" class="bell-badge" style="display:none">0</span>
@@ -2045,6 +2105,98 @@ function S7_LOGO_INLINE(heightPx) {
 }
 
 // =====================================================================
+// =====================================================================
+// FIREBASE — Cloud Sync (Realtime Database)
+// Replace the placeholder values below with your Firebase project config.
+// =====================================================================
+const FIREBASE_CONFIG = {
+  apiKey:            "PASTE_YOUR_API_KEY_HERE",
+  authDomain:        "PASTE_YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL:       "https://PASTE_YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+  projectId:         "PASTE_YOUR_PROJECT_ID",
+  storageBucket:     "PASTE_YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "PASTE_YOUR_SENDER_ID",
+  appId:             "PASTE_YOUR_APP_ID"
+};
+
+const FB_DATA_PATH = 's7_dcs_v1'; // root path in your Realtime Database
+let _fbDB = null;           // Firebase database reference
+let _fbSaveTimer = null;    // debounce timer for saves
+let _fbConfigured = false;  // true once real config is pasted
+
+function _isFirebaseConfigured() {
+  return FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('PASTE');
+}
+
+function initFirebase() {
+  if (!_isFirebaseConfigured()) {
+    _setSyncIndicator('local', 'Local only');
+    return false;
+  }
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    _fbDB = firebase.database();
+    _fbConfigured = true;
+    return true;
+  } catch(e) {
+    console.warn('Firebase init failed:', e);
+    _setSyncIndicator('error', 'Sync error');
+    return false;
+  }
+}
+
+async function loadFromFirebase() {
+  if (!_fbDB) return null;
+  try {
+    _setSyncIndicator('syncing', 'Syncing…');
+    const snap = await _fbDB.ref(FB_DATA_PATH).once('value');
+    return snap.val();
+  } catch(e) {
+    console.warn('Firebase load failed:', e);
+    _setSyncIndicator('error', 'Offline');
+    return null;
+  }
+}
+
+function saveToFirebase(data) {
+  if (!_fbDB) return;
+  clearTimeout(_fbSaveTimer);
+  _fbSaveTimer = setTimeout(async () => {
+    try {
+      _setSyncIndicator('syncing', 'Saving…');
+      await _fbDB.ref(FB_DATA_PATH).set(data);
+      _setSyncIndicator('ok', 'Synced');
+    } catch(e) {
+      console.warn('Firebase save failed:', e);
+      _setSyncIndicator('error', 'Save failed');
+    }
+  }, 800); // debounce: wait 800ms after last change before writing
+}
+
+function _setSyncIndicator(state, label) {
+  const el    = document.getElementById('cloud-sync-indicator');
+  const icon  = document.getElementById('cloud-sync-icon');
+  const lbl   = document.getElementById('cloud-sync-label');
+  if (!el || !icon || !lbl) return;
+  lbl.textContent = label;
+  el.style.color = state === 'ok' ? '#198754' : state === 'syncing' ? '#c07d30' : state === 'error' ? '#dc3545' : '#aaa';
+  el.style.background = state === 'ok' ? '#e9f7ef' : state === 'syncing' ? '#fef3e2' : state === 'error' ? '#fdecea' : '#f5f5f5';
+  icon.className = state === 'ok' ? 'bi bi-cloud-check-fill' : state === 'syncing' ? 'bi bi-cloud-arrow-up-fill' : state === 'error' ? 'bi bi-cloud-slash-fill' : 'bi bi-cloud';
+}
+
+function _patchDBArrays() {
+  if (!DB.salons)           DB.salons = [];
+  if (!DB.products)         DB.products = [];
+  if (!DB.couriers)         DB.couriers = [];
+  if (!DB.dispatches)       DB.dispatches = [];
+  if (!DB.receivings)       DB.receivings = [];
+  if (!DB.deletedDispatches)DB.deletedDispatches = [];
+  if (!DB.pendingOrders)    DB.pendingOrders = [];
+  if (!DB.settings)         DB.settings = { nextDispatchSeq: 1 };
+  if (!DB.emailSettings)    DB.emailSettings = { to: ['orders@studieo7.in','accounts@studieo7.in'], cc: ['desmen@studieo7.in','rajesh@studieo7.in'] };
+}
+
+// =====================================================================
 // DATA LAYER — localStorage persistence
 // =====================================================================
 const DB_KEY = 's7_dcs_db';
@@ -2056,19 +2208,10 @@ let DB = {
 function loadDB() {
   const raw = localStorage.getItem(DB_KEY);
   if (raw) { try { DB = JSON.parse(raw); } catch(e){} }
-  if (!DB.salons) DB.salons = [];
-  if (!DB.products) DB.products = [];
-  if (!DB.couriers) DB.couriers = [];
-  if (!DB.dispatches) DB.dispatches = [];
-  if (!DB.receivings) DB.receivings = [];
-  if (!DB.deletedDispatches) DB.deletedDispatches = [];
-  if (!DB.pendingOrders) DB.pendingOrders = [];
-  if (!DB.settings) DB.settings = { nextDispatchSeq: 1 };
-  if (!DB.emailSettings) DB.emailSettings = {
-    to: ['orders@studieo7.in', 'accounts@studieo7.in'],
-    cc: ['desmen@studieo7.in', 'rajesh@studieo7.in']
-  };
-  if (DB.salons.length === 0) seedDemoData();
+  _patchDBArrays();
+  // On a fresh PC/browser localStorage is empty → flag so DOMContentLoaded
+  // can first try Firebase cloud, then fall back to manual restore overlay.
+  if (DB.salons.length === 0) { window._freshInstall = true; }
   // Backfill missing fields on receivings records (one-time migration).
   // Also look in deletedDispatches so legacy records retain readable metadata after a dispatch is deleted.
   let migrated = false;
@@ -2089,7 +2232,10 @@ function loadDB() {
   });
   if (migrated) saveDB();
 }
-function saveDB() { localStorage.setItem(DB_KEY, JSON.stringify(DB)); }
+function saveDB() {
+  localStorage.setItem(DB_KEY, JSON.stringify(DB));
+  saveToFirebase(DB); // background cloud save (debounced 800ms)
+}
 
 function seedDemoData() {
   DB.salons = [
@@ -6730,6 +6876,42 @@ function handleRestoreDrop(e) {
   if (file) importBackup(file);
 }
 
+// =====================================================================
+// FRESH-INSTALL RESTORE — handles the first-run overlay on a new PC
+// =====================================================================
+function fiHandleDrop(event) {
+  const file = event.dataTransfer.files[0];
+  if (file) fiImport(file);
+}
+
+function fiImport(file) {
+  const statusEl = document.getElementById('fi-status');
+  if (!file) return;
+  if (!file.name.endsWith('.json')) {
+    if (statusEl) statusEl.textContent = '✗ Please select a valid S7 DCS backup .json file.';
+    return;
+  }
+  if (statusEl) statusEl.textContent = 'Reading backup file…';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.salons || !data.dispatches || !data.settings) {
+        if (statusEl) statusEl.textContent = '✗ Invalid backup — missing required fields.';
+        return;
+      }
+      DB = data;
+      _patchDBArrays(); // ensure all arrays exist even in old backups
+      saveDB(); // saves to localStorage + Firebase cloud
+      if (statusEl) statusEl.textContent = `✅ Restored! ${DB.salons.length} salons · ${DB.products.length} products · ${DB.dispatches.length} dispatches. Uploading to cloud & reloading…`;
+      setTimeout(() => location.reload(), 1200);
+    } catch(err) {
+      if (statusEl) statusEl.textContent = '✗ Error reading the backup file. Make sure it is a valid JSON.';
+    }
+  };
+  reader.readAsText(file);
+}
+
 function importBackup(file) {
   if (!file) return;
   if (!file.name.endsWith('.json')) { alert('Please select a valid S7 DCS backup .json file.'); return; }
@@ -6751,9 +6933,56 @@ function importBackup(file) {
 // =====================================================================
 // INIT
 // =====================================================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initAuth();
+  initFirebase();  // set up Firebase (no-op if config not yet pasted)
   loadDB();
+
+  // ── Fresh-install path: no localStorage data ──────────────────────────
+  if (window._freshInstall) {
+    const fiOverlay = document.getElementById('fresh-install-overlay');
+    const fiStatus  = document.getElementById('fi-status');
+    if (fiOverlay) fiOverlay.classList.remove('hidden');
+
+    if (_fbConfigured) {
+      // Try loading from Firebase cloud before asking user to restore manually
+      if (fiStatus) fiStatus.textContent = '☁ Checking cloud for existing data…';
+      const fbData = await loadFromFirebase();
+      if (fbData && fbData.salons && fbData.salons.length > 0) {
+        // Found data in cloud — restore silently, no user action needed
+        DB = fbData;
+        _patchDBArrays();
+        saveDB(); // cache into localStorage for next load
+        window._freshInstall = false;
+        if (fiOverlay) fiOverlay.classList.add('hidden');
+        _setSyncIndicator('ok', 'Synced');
+        // Fall through to normal app init below
+      } else {
+        // Cloud is also empty — let user restore from .json
+        if (fiStatus) fiStatus.textContent = 'Cloud is empty. Restore your backup .json file below.';
+        return;
+      }
+    } else {
+      // Firebase not configured — show manual restore overlay
+      if (fiStatus) fiStatus.textContent = '';
+      return;
+    }
+  } else if (_fbConfigured) {
+    // ── Returning visit: silently sync latest cloud data in background ──
+    loadFromFirebase().then(fbData => {
+      if (fbData && fbData.salons && fbData.salons.length > 0) {
+        // Only update if cloud version is newer (more dispatches)
+        if (fbData.dispatches && fbData.dispatches.length >= DB.dispatches.length) {
+          DB = fbData;
+          _patchDBArrays();
+          localStorage.setItem(DB_KEY, JSON.stringify(DB));
+          _setSyncIndicator('ok', 'Synced');
+        } else {
+          _setSyncIndicator('ok', 'Synced');
+        }
+      }
+    }).catch(() => _setSyncIndicator('error', 'Offline'));
+  }
   // Hi-Fi v3 split date format: day on top (Thu, 09 May), week + year below (2026 · WK 19)
   const _today = new Date();
   const _dayEl  = document.getElementById('topbar-date-day');
