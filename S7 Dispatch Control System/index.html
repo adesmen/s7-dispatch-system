@@ -1266,6 +1266,7 @@ body.role-management .mgmt-nopage { display: none !important; }
               <option value="product">Product-wise Report</option>
               <option value="missing">Missing Items Report</option>
               <option value="damage">Transit Damage Report</option>
+              <option value="courier">Courier Report</option>
               <option value="deleted">Deleted Dispatch Report</option>
             </select>
 
@@ -6330,6 +6331,7 @@ function generateReport() {
   if (type === 'missing')  { renderMissingReport(label, dispatches, rcvings); return; }
   if (type === 'damage')   { renderDamageReport(label, dispatches, rcvings); return; }
   if (type === 'product')  { renderProductReport(label, dispatches); return; }
+  if (type === 'courier')  { renderCourierReport(label, dispatches, rcvings); return; }
   if (type === 'deleted')  { renderDeletedDispatchReport(label, start, end, salonFilter); return; }
 
   // Standard report (weekly / monthly / custom)
@@ -6634,6 +6636,128 @@ function renderDamageReport(label, dispatches, rcvings) {
     </div>`;
 }
 
+function renderCourierReport(label, dispatches, rcvings) {
+  // Build a quick lookup: dispatchId → earliest confirmed receiving date
+  const confirmMap = {};
+  rcvings.forEach(r => {
+    if (!r.receivedAt) return;
+    const existing = confirmMap[r.dispatchId];
+    const dt = new Date(r.receivedAt);
+    if (!existing || dt < new Date(existing)) confirmMap[r.dispatchId] = r.receivedAt;
+  });
+
+  // Sort by dispatch date then dispatch ID
+  const rows = [...dispatches].sort((a,b) => {
+    const dd = (a.dispatchDate||a.createdAt).localeCompare(b.dispatchDate||b.createdAt);
+    return dd !== 0 ? dd : (a.dispatchId||'').localeCompare(b.dispatchId||'');
+  });
+
+  // KPI counts
+  const withTracking   = rows.filter(d => d.trackingNo && d.trackingNo.trim()).length;
+  const noTracking     = rows.length - withTracking;
+  const confirmed      = rows.filter(d => confirmMap[d.id]).length;
+  const inTransit      = rows.filter(d => !confirmMap[d.id] && ['dispatched','in_transit'].includes(d.status)).length;
+
+  // Group by courier for quick summary
+  const courierMap = {};
+  rows.forEach(d => {
+    const c = d.courierPartner || 'Not Assigned';
+    if (!courierMap[c]) courierMap[c] = 0;
+    courierMap[c]++;
+  });
+  const courierSummary = Object.entries(courierMap).sort((a,b)=>b[1]-a[1]);
+
+  document.getElementById('report-output').innerHTML = `
+    <div class="s7-card" id="report-print-area">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="s7-card-title mb-0">
+          <i class="bi bi-truck text-warning me-2"></i>Courier Report
+        </div>
+        <small class="text-muted">${label}</small>
+      </div>
+
+      <!-- KPI row -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="kpi-card"><div class="kpi-val">${rows.length}</div><div class="kpi-lbl">Total Dispatches</div></div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi-card"><div class="kpi-val text-success">${confirmed}</div><div class="kpi-lbl">Delivery Confirmed</div></div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi-card"><div class="kpi-val text-primary">${inTransit}</div><div class="kpi-lbl">In Transit</div></div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi-card"><div class="kpi-val ${noTracking>0?'text-warning':''}">${noTracking}</div><div class="kpi-lbl">No Tracking No.</div></div>
+        </div>
+      </div>
+
+      <!-- Courier-wise count -->
+      ${courierSummary.length > 0 ? `
+      <div class="s7-card-title"><i class="bi bi-bar-chart text-warning me-2"></i>Courier-wise Count</div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        ${courierSummary.map(([c,n])=>`
+          <div style="background:#faf6f0;border:1px solid #ede6d9;border-radius:8px;padding:6px 14px;font-size:13px">
+            <strong style="color:#d58f3e">${n}</strong> &nbsp;${c}
+          </div>`).join('')}
+      </div>` : ''}
+
+      <!-- Main table -->
+      ${rows.length > 0 ? `
+      <div class="s7-card-title"><i class="bi bi-list text-warning me-2"></i>Dispatch Log — Courier Details</div>
+      <div class="s7-table" style="overflow-x:auto">
+        <table class="table table-borderless mb-0" style="min-width:950px">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Dispatch ID</th>
+              <th>Invoice Date</th>
+              <th>Invoice No.</th>
+              <th>Salon Name</th>
+              <th>Dispatch Date</th>
+              <th>Courier</th>
+              <th>Tracking Number</th>
+              <th>Date of Confirmation</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((d,i) => {
+              const salon        = getSalon(d.salonId);
+              const salonName    = salon.name || '—';
+              const confirmDate  = confirmMap[d.id] ? fmtDate(confirmMap[d.id]) : '—';
+              const hasConfirm   = !!confirmMap[d.id];
+              const hasTracking  = d.trackingNo && d.trackingNo.trim();
+              const rowBg        = i % 2 === 0 ? '#fff' : '#faf6f0';
+              return `<tr style="background:${rowBg}">
+                <td class="text-muted" style="font-size:12px">${i+1}</td>
+                <td><strong style="font-family:'IBM Plex Mono',monospace;font-size:12.5px">${d.dispatchId||'—'}</strong></td>
+                <td style="white-space:nowrap">${d.invoiceDate ? fmtDate(d.invoiceDate) : '—'}</td>
+                <td style="font-size:12.5px">${d.invoiceNo||'—'}</td>
+                <td><strong>${salonName}</strong></td>
+                <td style="white-space:nowrap">${d.dispatchDate ? fmtDate(d.dispatchDate) : '—'}</td>
+                <td>
+                  ${d.courierPartner
+                    ? `<span class="badge rounded-pill" style="background:#f0e6d3;color:#7a4f1e;font-size:12px;font-weight:600">${d.courierPartner}</span>`
+                    : `<span class="text-muted" style="font-size:12px">Not assigned</span>`}
+                </td>
+                <td style="font-family:'IBM Plex Mono',monospace;font-size:12px">
+                  ${hasTracking
+                    ? `<span style="color:#1d6f42">${d.trackingNo}</span>`
+                    : `<span class="text-warning" style="font-size:12px"><i class="bi bi-exclamation-triangle me-1"></i>Missing</span>`}
+                </td>
+                <td style="white-space:nowrap">
+                  ${hasConfirm
+                    ? `<span style="color:#198754;font-weight:600"><i class="bi bi-check-circle-fill me-1"></i>${confirmDate}</span>`
+                    : `<span class="text-muted" style="font-size:12px">—</span>`}
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>` : '<div class="text-muted text-center py-3">No dispatches in this period.</div>'}
+    </div>`;
+}
+
 function renderDeletedDispatchReport(label, start, end, salonFilter) {
   let items = [...(DB.deletedDispatches || [])].filter(d => {
     const dt = new Date(d.deletedAt || d.createdAt);
@@ -6712,7 +6836,7 @@ function printReport() {
   const printArea = document.getElementById('report-print-area');
   if (!printArea) { alert('Please generate a report first.'); return; }
   const reportType = document.getElementById('rpt-type')?.value || 'report';
-  const reportTitle = ({weekly:'Weekly Report',monthly:'Monthly Report',custom:'Custom Range Report',product:'Product-wise Report',missing:'Missing Items Report',damage:'Transit Damage Report',deleted:'Deleted Dispatch Report'})[reportType] || 'Report';
+  const reportTitle = ({weekly:'Weekly Report',monthly:'Monthly Report',custom:'Custom Range Report',product:'Product-wise Report',missing:'Missing Items Report',damage:'Transit Damage Report',courier:'Courier Report',deleted:'Deleted Dispatch Report'})[reportType] || 'Report';
   // Browser "Save as PDF" uses document.title as the default filename → bake the
   // <Report Name>_YYYY-MM-DD_HHMM convention right into the print-window title.
   const printDocTitle = s7SaveName(reportTitle);
