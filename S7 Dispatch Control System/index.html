@@ -1643,101 +1643,145 @@ body.role-management .mgmt-nopage { display: none !important; }
         <div class="col-12">
           <div class="s7-card">
             <div class="s7-card-title"><i class="bi bi-people-fill text-warning me-2"></i>User Management</div>
-            <p style="font-size:13.5px;color:#555;margin-bottom:16px">Manage login credentials for Executive and Management roles. Super Admin password is managed separately.</p>
-            <div class="row g-3">
-              <!-- Executive Card -->
-              <div class="col-md-6">
-                <div class="border rounded p-3">
-                  <div class="d-flex align-items-center mb-3 gap-2">
-                    <div style="width:40px;height:40px;border-radius:50%;background:#5a82c8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;">GU</div>
-                    <div>
-                      <div class="fw-semibold" style="font-size:.95rem;">Executive</div>
-                      <div class="text-muted" style="font-size:.8rem;">Username: guna</div>
-                    </div>
-                    <span class="badge bg-primary ms-auto" style="font-size:.7rem;">Executive</span>
-                  </div>
-                  <div class="mb-2">
-                    <label class="form-label" style="font-size:.8rem;font-weight:600;">New Password</label>
-                    <div class="input-group input-group-sm">
-                      <input type="password" class="form-control" id="um-exec-pwd" placeholder="Enter new password">
-                      <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-exec-pwd','um-exec-eye')"><i class="bi bi-eye" id="um-exec-eye"></i></button>
-                    </div>
-                  </div>
-                  <div class="d-flex gap-2 mt-2">
-                    <button class="btn btn-sm btn-s7 flex-grow-1" onclick="saveUMPassword('executive')"><i class="bi bi-check-circle me-1"></i>Save Password</button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="resetUMPassword('executive')"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Default</button>
-                  </div>
-                  <div class="text-muted mt-2" style="font-size:.75rem;" id="um-exec-msg"></div>
-                </div>
+            <p style="font-size:13.5px;color:#555;margin-bottom:0">Set login credentials and page access permissions for each user role.</p>
+          </div>
+        </div>
+
+        <!-- ── Executive Card ── -->
+        <div class="col-lg-6">
+          <div class="s7-card h-100" style="border-top:3px solid #5a82c8">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div style="width:46px;height:46px;border-radius:50%;background:#5a82c8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0">GU</div>
+              <div>
+                <div class="fw-bold" style="font-size:1rem;">Executive</div>
+                <div class="text-muted" style="font-size:.8rem;" id="um-exec-current-uname">Username: guna</div>
               </div>
-              <!-- Management Card -->
-              <div class="col-md-6">
-                <div class="border rounded p-3">
-                  <div class="d-flex align-items-center mb-3 gap-2">
-                    <div style="width:40px;height:40px;border-radius:50%;background:#6c757d;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;">MG</div>
-                    <div>
-                      <div class="fw-semibold" style="font-size:.95rem;">Management</div>
-                      <div class="text-muted" style="font-size:.8rem;">Username: s7mgt</div>
-                    </div>
-                    <span class="badge bg-secondary ms-auto" style="font-size:.7rem;">Management</span>
-                  </div>
-                  <div class="mb-2">
-                    <label class="form-label" style="font-size:.8rem;font-weight:600;">New Password</label>
-                    <div class="input-group input-group-sm">
-                      <input type="password" class="form-control" id="um-mgt-pwd" placeholder="Enter new password">
-                      <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-mgt-pwd','um-mgt-eye')"><i class="bi bi-eye" id="um-mgt-eye"></i></button>
-                    </div>
-                  </div>
-                  <div class="d-flex gap-2 mt-2">
-                    <button class="btn btn-sm btn-s7 flex-grow-1" onclick="saveUMPassword('management')"><i class="bi bi-check-circle me-1"></i>Save Password</button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="resetUMPassword('management')"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Default</button>
-                  </div>
-                  <div class="text-muted mt-2" style="font-size:.75rem;" id="um-mgt-msg"></div>
-                </div>
+              <span class="badge bg-primary ms-auto" style="font-size:.72rem;">Executive</span>
+            </div>
+
+            <!-- Username -->
+            <div class="mb-3 p-3 rounded" style="background:#f4f8ff;border:1px solid #d0def7">
+              <div class="fw-semibold mb-2" style="font-size:.82rem;color:#3a5fa0"><i class="bi bi-person-fill me-1"></i>Change Username</div>
+              <div class="input-group input-group-sm mb-2">
+                <input type="text" class="form-control" id="um-exec-uname" placeholder="New username (min 3 chars, no spaces)">
               </div>
-              <!-- Super Admin own password -->
-              <div class="col-12">
-                <div class="border rounded p-3" style="border-color:#d58f3e !important;background:#fdf9f4;">
-                  <div class="d-flex align-items-center mb-3 gap-2">
-                    <div style="width:40px;height:40px;border-radius:50%;background:#d58f3e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;">SA</div>
-                    <div>
-                      <div class="fw-semibold" style="font-size:.95rem;">Super Admin</div>
-                      <div class="text-muted" style="font-size:.8rem;">Username: superadmin</div>
-                    </div>
-                    <span class="badge ms-auto" style="font-size:.7rem;background:#d58f3e;">Super Admin</span>
-                  </div>
-                  <div class="row g-2">
-                    <div class="col-md-4">
-                      <label class="form-label" style="font-size:.8rem;font-weight:600;">Current Password</label>
-                      <div class="input-group input-group-sm">
-                        <input type="password" class="form-control" id="um-sa-current" placeholder="Current password">
-                        <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-sa-current','um-sa-eye0')"><i class="bi bi-eye" id="um-sa-eye0"></i></button>
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label" style="font-size:.8rem;font-weight:600;">New Password</label>
-                      <div class="input-group input-group-sm">
-                        <input type="password" class="form-control" id="um-sa-new" placeholder="New password">
-                        <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-sa-new','um-sa-eye1')"><i class="bi bi-eye" id="um-sa-eye1"></i></button>
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label" style="font-size:.8rem;font-weight:600;">Confirm Password</label>
-                      <div class="input-group input-group-sm">
-                        <input type="password" class="form-control" id="um-sa-confirm" placeholder="Confirm new password">
-                        <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-sa-confirm','um-sa-eye2')"><i class="bi bi-eye" id="um-sa-eye2"></i></button>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="mt-2">
-                    <button class="btn btn-sm btn-s7" onclick="saveUMPassword('superadmin')"><i class="bi bi-key me-1"></i>Change Super Admin Password</button>
-                  </div>
-                  <div class="text-muted mt-2" style="font-size:.75rem;" id="um-sa-msg"></div>
-                </div>
+              <button class="btn btn-sm btn-primary w-100" onclick="saveUMUsername('executive')"><i class="bi bi-check-circle me-1"></i>Save Username</button>
+              <div style="font-size:.72rem;margin-top:4px;" id="um-exec-uname-msg"></div>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3 p-3 rounded" style="background:#f4f8ff;border:1px solid #d0def7">
+              <div class="fw-semibold mb-2" style="font-size:.82rem;color:#3a5fa0"><i class="bi bi-key-fill me-1"></i>Change Password</div>
+              <div class="input-group input-group-sm mb-2">
+                <input type="password" class="form-control" id="um-exec-pwd" placeholder="New password (min 4 chars)">
+                <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-exec-pwd','um-exec-eye')"><i class="bi bi-eye" id="um-exec-eye"></i></button>
               </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-primary flex-grow-1" onclick="saveUMPassword('executive')"><i class="bi bi-check-circle me-1"></i>Save Password</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="resetUMPassword('executive')"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
+              </div>
+              <div style="font-size:.72rem;margin-top:4px;" id="um-exec-msg"></div>
+            </div>
+
+            <!-- Page Permissions -->
+            <div class="p-3 rounded" style="background:#f4f8ff;border:1px solid #d0def7">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="fw-semibold" style="font-size:.82rem;color:#3a5fa0"><i class="bi bi-shield-lock-fill me-1"></i>Page Access Permissions</div>
+                <button class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px" onclick="resetUMPermissions('executive')"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Default</button>
+              </div>
+              <div id="um-exec-perms"></div>
             </div>
           </div>
         </div>
+
+        <!-- ── Management Card ── -->
+        <div class="col-lg-6">
+          <div class="s7-card h-100" style="border-top:3px solid #6c757d">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div style="width:46px;height:46px;border-radius:50%;background:#6c757d;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0">MG</div>
+              <div>
+                <div class="fw-bold" style="font-size:1rem;">Management</div>
+                <div class="text-muted" style="font-size:.8rem;" id="um-mgt-current-uname">Username: s7mgt</div>
+              </div>
+              <span class="badge bg-secondary ms-auto" style="font-size:.72rem;">Management</span>
+            </div>
+
+            <!-- Username -->
+            <div class="mb-3 p-3 rounded" style="background:#f4f8ff;border:1px solid #d0def7">
+              <div class="fw-semibold mb-2" style="font-size:.82rem;color:#3a5fa0"><i class="bi bi-person-fill me-1"></i>Change Username</div>
+              <div class="input-group input-group-sm mb-2">
+                <input type="text" class="form-control" id="um-mgt-uname" placeholder="New username (min 3 chars, no spaces)">
+              </div>
+              <button class="btn btn-sm btn-secondary w-100" onclick="saveUMUsername('management')"><i class="bi bi-check-circle me-1"></i>Save Username</button>
+              <div style="font-size:.72rem;margin-top:4px;" id="um-mgt-uname-msg"></div>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3 p-3 rounded" style="background:#f4f8ff;border:1px solid #d0def7">
+              <div class="fw-semibold mb-2" style="font-size:.82rem;color:#3a5fa0"><i class="bi bi-key-fill me-1"></i>Change Password</div>
+              <div class="input-group input-group-sm mb-2">
+                <input type="password" class="form-control" id="um-mgt-pwd" placeholder="New password (min 4 chars)">
+                <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-mgt-pwd','um-mgt-eye')"><i class="bi bi-eye" id="um-mgt-eye"></i></button>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-secondary flex-grow-1" onclick="saveUMPassword('management')"><i class="bi bi-check-circle me-1"></i>Save Password</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="resetUMPassword('management')"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
+              </div>
+              <div style="font-size:.72rem;margin-top:4px;" id="um-mgt-msg"></div>
+            </div>
+
+            <!-- Page Permissions -->
+            <div class="p-3 rounded" style="background:#f4f8ff;border:1px solid #d0def7">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="fw-semibold" style="font-size:.82rem;color:#3a5fa0"><i class="bi bi-shield-lock-fill me-1"></i>Page Access Permissions</div>
+                <button class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px" onclick="resetUMPermissions('management')"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Default</button>
+              </div>
+              <div id="um-mgt-perms"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Super Admin own password ── -->
+        <div class="col-12">
+          <div class="s7-card" style="border-top:3px solid #d58f3e">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div style="width:46px;height:46px;border-radius:50%;background:#d58f3e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0">SA</div>
+              <div>
+                <div class="fw-bold" style="font-size:1rem;">Super Admin</div>
+                <div class="text-muted" style="font-size:.8rem;">Username: superadmin &nbsp;·&nbsp; Full access, not configurable</div>
+              </div>
+              <span class="badge ms-auto" style="font-size:.72rem;background:#d58f3e;">Super Admin</span>
+            </div>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label class="form-label" style="font-size:.8rem;font-weight:600;">Current Password</label>
+                <div class="input-group input-group-sm">
+                  <input type="password" class="form-control" id="um-sa-current" placeholder="Current password">
+                  <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-sa-current','um-sa-eye0')"><i class="bi bi-eye" id="um-sa-eye0"></i></button>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" style="font-size:.8rem;font-weight:600;">New Password</label>
+                <div class="input-group input-group-sm">
+                  <input type="password" class="form-control" id="um-sa-new" placeholder="New password">
+                  <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-sa-new','um-sa-eye1')"><i class="bi bi-eye" id="um-sa-eye1"></i></button>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" style="font-size:.8rem;font-weight:600;">Confirm Password</label>
+                <div class="input-group input-group-sm">
+                  <input type="password" class="form-control" id="um-sa-confirm" placeholder="Confirm new password">
+                  <button class="btn btn-outline-secondary" type="button" onclick="toggleUMPwd('um-sa-confirm','um-sa-eye2')"><i class="bi bi-eye" id="um-sa-eye2"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="mt-2">
+              <button class="btn btn-sm btn-s7" onclick="saveUMPassword('superadmin')"><i class="bi bi-key me-1"></i>Change Super Admin Password</button>
+            </div>
+            <div class="text-muted mt-2" style="font-size:.75rem;" id="um-sa-msg"></div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -2409,9 +2453,10 @@ const pageSubtitles = {
 };
 
 function showPage(pageId, el) {
-  // Block management role from new dispatch page
-  if (pageId === 'newdispatch' && typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'management') {
-    return; // silently blocked (nav item is hidden by CSS anyway)
+  // Enforce page-level permission for non-superadmin users
+  if (currentUser && currentUser.role !== 'superadmin' && pageId !== 'usermgmt') {
+    const access = getEffectivePageAccess(currentUser.role);
+    if (access[pageId] === false) return; // silently blocked (nav item hidden anyway)
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item-s7').forEach(n => n.classList.remove('active'));
@@ -2432,6 +2477,7 @@ function showPage(pageId, el) {
   if (pageId === 'reports') { populateFilterSalons('rpt-salon'); populateFYOptions(); generateReport(); }
   if (pageId === 'backup') { renderBackupStats(); loadCloudBackupList(); }
   if (pageId === 'recyclebin') renderRecycleBin();
+  if (pageId === 'usermgmt') initUserMgmtPage();
 }
 
 // =====================================================================
@@ -7388,8 +7434,77 @@ document.addEventListener('DOMContentLoaded', async () => {
 // AUTH — Login / Logout / Role Management
 // =====================================================================
 
-const AUTH_KEY = 's7dcs_auth_session';
-const PWD_KEY  = 's7dcs_passwords';
+const AUTH_KEY      = 's7dcs_auth_session';
+const PWD_KEY       = 's7dcs_passwords';
+const UNAME_KEY     = 's7dcs_usernames';   // custom usernames per role
+const PAGE_PERM_KEY = 's7dcs_page_perms';  // page access overrides per role
+
+// All navigable pages (usermgmt is always superadmin-only, not listed here)
+const ALL_PAGES = [
+  { id: 'dashboard',     label: 'Dashboard',         icon: 'bi-speedometer2' },
+  { id: 'salons',        label: 'Salons',            icon: 'bi-shop' },
+  { id: 'products',      label: 'Products',          icon: 'bi-box-seam' },
+  { id: 'couriers',      label: 'Courier Partners',  icon: 'bi-truck-front' },
+  { id: 'newdispatch',   label: 'New Dispatch',      icon: 'bi-box-arrow-up' },
+  { id: 'tracking',      label: 'Track & Manage',    icon: 'bi-geo-alt' },
+  { id: 'pendingorders', label: 'Pending Orders',    icon: 'bi-clock-history' },
+  { id: 'receiving',     label: 'Salon Receiving',   icon: 'bi-box-arrow-in-down' },
+  { id: 'reports',       label: 'Reports',           icon: 'bi-bar-chart' },
+  { id: 'recyclebin',    label: 'Recycle Bin',       icon: 'bi-trash3' },
+  { id: 'backup',        label: 'Backup & Restore',  icon: 'bi-cloud-arrow-up' },
+];
+
+// Default page access for each role (superadmin always has all)
+const DEFAULT_PAGE_ACCESS = {
+  executive:  { dashboard:true, salons:true, products:true, couriers:true, newdispatch:true, tracking:true, pendingorders:true, receiving:true, reports:true, recyclebin:true, backup:true },
+  management: { dashboard:true, salons:false, products:false, couriers:false, newdispatch:false, tracking:true, pendingorders:true, receiving:true, reports:true, recyclebin:false, backup:false }
+};
+
+// ── Username helpers ──────────────────────────────────────────────────
+function getCustomUsernames() {
+  try { return JSON.parse(localStorage.getItem(UNAME_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveCustomUsernames(obj) { localStorage.setItem(UNAME_KEY, JSON.stringify(obj)); }
+
+// Get effective username for a role (custom override or hardcoded default)
+function getEffectiveUsername(role) {
+  const custom = getCustomUsernames();
+  if (custom[role]) return custom[role];
+  const defaults = { executive: 'guna', management: 's7mgt', superadmin: 'superadmin' };
+  return defaults[role] || '';
+}
+
+// ── Page permission helpers ───────────────────────────────────────────
+function getPagePerms() {
+  try { return JSON.parse(localStorage.getItem(PAGE_PERM_KEY)) || {}; } catch(e) { return {}; }
+}
+function savePagePerms(obj) { localStorage.setItem(PAGE_PERM_KEY, JSON.stringify(obj)); }
+
+function getEffectivePageAccess(role) {
+  if (role === 'superadmin') return {}; // SA has all access
+  const stored = getPagePerms();
+  return Object.assign({}, DEFAULT_PAGE_ACCESS[role] || {}, stored[role] || {});
+}
+
+// Apply sidebar visibility and block restricted pages for current user
+function applyPagePermissions() {
+  if (!currentUser || currentUser.role === 'superadmin') {
+    // Show all nav items that may have been hidden
+    document.querySelectorAll('.nav-item-s7').forEach(el => {
+      if (!el.classList.contains('superadmin-only')) el.style.display = '';
+    });
+    return;
+  }
+  const access = getEffectivePageAccess(currentUser.role);
+  document.querySelectorAll('.nav-item-s7').forEach(el => {
+    const onclick = el.getAttribute('onclick') || '';
+    const match = onclick.match(/showPage\('(\w+)'/);
+    if (!match) return;
+    const pageId = match[1];
+    if (pageId === 'usermgmt') return; // always controlled by superadmin-only CSS
+    el.style.display = access[pageId] === false ? 'none' : '';
+  });
+}
 
 // Default credentials (stored in localStorage, superadmin can change them)
 const DEFAULT_PASSWORDS = {
@@ -7431,13 +7546,23 @@ function getPasswordForRole(role) {
 
 // ── Auth init ─────────────────────────────────────────────────────────
 function initAuth() {
-  // Check if there is an existing session
   try {
     const session = JSON.parse(sessionStorage.getItem(AUTH_KEY));
-    if (session && session.username && USERS[session.username]) {
-      currentUser = { username: session.username, ...USERS[session.username] };
-      showApp();
-      return;
+    if (session) {
+      // Support both old { username } sessions and new { role } sessions
+      let role = session.role;
+      if (!role && session.username && USERS[session.username]) {
+        role = USERS[session.username].role;
+      }
+      if (role) {
+        const found = Object.entries(USERS).find(([,c]) => c.role === role);
+        if (found) {
+          const [, conf] = found;
+          currentUser = { username: getEffectiveUsername(role), role, displayName: conf.displayName, avatar: conf.avatar };
+          showApp();
+          return;
+        }
+      }
     }
   } catch(e) {}
   showLoginOverlay();
@@ -7467,8 +7592,10 @@ function showApp() {
     const roleLabels = { superadmin:'Super Admin', executive:'Executive', management:'Management' };
     roleEl.textContent = roleLabels[currentUser.role] || currentUser.role;
   }
-  // Save session
-  sessionStorage.setItem(AUTH_KEY, JSON.stringify({ username: currentUser.username }));
+  // Save session (role-based so username changes don't invalidate it)
+  sessionStorage.setItem(AUTH_KEY, JSON.stringify({ role: currentUser.role }));
+  // Apply dynamic page permission visibility
+  setTimeout(applyPagePermissions, 0);
 }
 
 function doLogin() {
@@ -7481,23 +7608,47 @@ function doLogin() {
     return;
   }
 
-  // Lookup user
-  const userConf = USERS[username];
-  if (!userConf) {
+  // Resolve which role this username belongs to.
+  // Check hardcoded defaults first, then custom usernames.
+  let matchedRole = null;
+  let matchedConf = null;
+  if (USERS[username]) {
+    // Default username — valid only if no custom override is set for this role
+    const candidate = USERS[username];
+    const custom = getCustomUsernames();
+    if (!custom[candidate.role] || custom[candidate.role] === username) {
+      matchedRole = candidate.role;
+      matchedConf = candidate;
+    }
+  }
+  if (!matchedRole) {
+    // Check if username matches any custom username for a role
+    const custom = getCustomUsernames();
+    for (const [role, cname] of Object.entries(custom)) {
+      if (cname === username) {
+        matchedRole = role;
+        const found = Object.entries(USERS).find(([,c]) => c.role === role);
+        if (found) matchedConf = found[1];
+        break;
+      }
+    }
+  }
+  if (!matchedRole || !matchedConf) {
     if(errorEl) errorEl.textContent = 'Invalid username or password.';
     return;
   }
 
   // Validate password
-  const correctPwd = getPasswordForRole(userConf.role);
+  const correctPwd = getPasswordForRole(matchedRole);
   if (password !== correctPwd) {
     if(errorEl) errorEl.textContent = 'Invalid username or password.';
     return;
   }
 
-  // Success
+  // Success — store session by role so username changes don't break it
   if(errorEl) errorEl.textContent = '';
-  currentUser = { username, ...userConf };
+  currentUser = { username, role: matchedRole, displayName: matchedConf.displayName, avatar: matchedConf.avatar };
+  sessionStorage.setItem(AUTH_KEY, JSON.stringify({ role: matchedRole }));
   showApp();
 }
 
@@ -7535,6 +7686,100 @@ function isManagement() { return currentUser && currentUser.role === 'management
 function canEdit()      { return currentUser && currentUser.role !== 'management'; }
 
 // ── User Management page functions ────────────────────────────────────
+
+// Called when the usermgmt page is shown — populate dynamic content
+function initUserMgmtPage() {
+  const custom = getCustomUsernames();
+  // Show current usernames
+  const execUname  = custom.executive  || 'guna';
+  const mgtUname   = custom.management || 's7mgt';
+  const execEl = document.getElementById('um-exec-current-uname');
+  const mgtEl  = document.getElementById('um-mgt-current-uname');
+  if (execEl) execEl.textContent = 'Current username: ' + execUname;
+  if (mgtEl)  mgtEl.textContent  = 'Current username: ' + mgtUname;
+  // Render permission grids
+  renderPermGrid('executive');
+  renderPermGrid('management');
+}
+
+function renderPermGrid(role) {
+  const containerId = role === 'executive' ? 'um-exec-perms' : 'um-mgt-perms';
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const access = getEffectivePageAccess(role);
+  container.innerHTML = ALL_PAGES.map(pg => {
+    const allowed = access[pg.id] !== false;
+    return `
+      <div class="d-flex align-items-center justify-content-between py-1" style="border-bottom:1px solid #e8edf7">
+        <div style="font-size:.82rem;display:flex;align-items:center;gap:6px">
+          <i class="bi ${pg.icon}" style="color:#5a82c8;font-size:.85rem"></i>
+          <span>${pg.label}</span>
+        </div>
+        <div class="d-flex gap-1">
+          <button onclick="setPagePerm('${role}','${pg.id}',true)"
+            class="btn btn-sm ${allowed ? 'btn-success' : 'btn-outline-secondary'}"
+            style="font-size:.7rem;padding:2px 10px;min-width:58px">
+            <i class="bi bi-check-lg me-1"></i>Allow
+          </button>
+          <button onclick="setPagePerm('${role}','${pg.id}',false)"
+            class="btn btn-sm ${!allowed ? 'btn-danger' : 'btn-outline-secondary'}"
+            style="font-size:.7rem;padding:2px 10px;min-width:55px">
+            <i class="bi bi-x-lg me-1"></i>Deny
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function setPagePerm(role, pageId, allow) {
+  const perms = getPagePerms();
+  if (!perms[role]) perms[role] = {};
+  perms[role][pageId] = allow;
+  savePagePerms(perms);
+  renderPermGrid(role);        // refresh toggle buttons
+  applyPagePermissions();       // update sidebar live if the user is currently logged in as this role
+}
+
+function resetUMPermissions(role) {
+  if (!confirm(`Reset all page permissions for ${role} to default?`)) return;
+  const perms = getPagePerms();
+  delete perms[role];
+  savePagePerms(perms);
+  renderPermGrid(role);
+  applyPagePermissions();
+}
+
+function saveUMUsername(role) {
+  const inputId = role === 'executive' ? 'um-exec-uname' : 'um-mgt-uname';
+  const msgId   = role === 'executive' ? 'um-exec-uname-msg' : 'um-mgt-uname-msg';
+  const input   = document.getElementById(inputId);
+  const msgEl   = document.getElementById(msgId);
+  if (!input || !msgEl) return;
+
+  const newUname = input.value.trim().toLowerCase().replace(/\s+/g,'');
+  if (!newUname || newUname.length < 3) {
+    msgEl.innerHTML = '<span style="color:#dc3545">⚠ Username must be at least 3 characters with no spaces.</span>';
+    return;
+  }
+  // Ensure username isn't already taken
+  const custom   = getCustomUsernames();
+  const otherRole = role === 'executive' ? 'management' : 'executive';
+  const otherName = custom[otherRole] || (otherRole === 'management' ? 's7mgt' : 'guna');
+  if (newUname === otherName || newUname === 'superadmin') {
+    msgEl.innerHTML = '<span style="color:#dc3545">⚠ That username is already taken by another user.</span>';
+    return;
+  }
+  custom[role] = newUname;
+  saveCustomUsernames(custom);
+  input.value = '';
+  // Update displayed current username
+  const displayId = role === 'executive' ? 'um-exec-current-uname' : 'um-mgt-current-uname';
+  const displayEl = document.getElementById(displayId);
+  if (displayEl) displayEl.textContent = 'Current username: ' + newUname;
+  msgEl.innerHTML = '<span style="color:#198754">✓ Username updated to <strong>' + newUname + '</strong>. New username takes effect on next login.</span>';
+  setTimeout(() => { if(msgEl) msgEl.innerHTML = ''; }, 5000);
+}
+
 function toggleUMPwd(inputId, iconId) {
   const input = document.getElementById(inputId);
   const icon  = document.getElementById(iconId);
